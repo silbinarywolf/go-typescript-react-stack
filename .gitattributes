@@ -1,0 +1,7 @@
+# Use Unix line endings in all text files.
+#
+# note(jae): 2021-07-17
+# This ensures files are consistent across Windows / Linux / Mac.
+# Doing this can prevent classes of subtle cross-platform bugs, such as checking the contents
+# of a file and making sure it matches the expected test output.
+* text=auto eol=lf
