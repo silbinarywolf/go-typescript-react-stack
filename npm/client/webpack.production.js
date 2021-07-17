@@ -19,7 +19,7 @@ module.exports = mergeWithRules({
     module: {
 		rules: [
             {
-				test: /\.css$/,
+				test: /\.module.css$/,
 				use: [
                     {
 						loader: MiniCssExtractPlugin.loader,
@@ -35,10 +35,12 @@ module.exports = mergeWithRules({
 		}),
     ],
     output: {
+        filename: "bundle.[fullhash].min.js",
 		clean: true,
 	},
     optimization: {
         minimize: true,
         minimizer: [new TerserPlugin()],
+        usedExports: true,
     },
 });

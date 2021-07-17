@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"baseUrl": "./src",
 		"paths": {
-			"~*": ["./*"]
+			"~/*": ["./*"]
 		},
 		"strict": true,
 		"target": "es6",

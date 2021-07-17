@@ -18,7 +18,7 @@ module.exports = mergeWithRules({
 	module: {
 		rules: [
 			{
-				test: /\.css$/,
+				test: /\.module.css$/,
 				use: [
 					{
 						loader: require.resolve("style-loader"),

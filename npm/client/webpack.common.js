@@ -7,7 +7,11 @@ module.exports = {
 	module: {
 		rules: [
 			{
-				test: /\.css$/,
+				// note(jae): 2021-07-18
+				// we use ".module.css" format as other out-of-the-box bundlers such as Parcel
+				// use that format by default. This will hopefully make switching to other such
+				// bundlers easier in the future, if we decide to do this.
+				test: /\.module.css$/,
 				use: [
 					{
 						loader: require.resolve("css-modules-typescript-loader"),
@@ -23,13 +27,19 @@ module.exports = {
 						},
 					},
 					{
+						// note(jae): 2021-07-18
+						// we use PostCSS instead of SASS because
+						// - Node-SASS and Dart SASS are very very slow
+						// - Most loaders end up relying on postcss-loader for the "autoprefixer" module anyway
+						//		- So let's keep our loaders low, so that build-time is fast.
+						// - If we need more plugins, we can install them if need be.
 						loader: require.resolve("postcss-loader")
 					}
 				],
 			},
 			{
 				test: /\.tsx?$/,
-				use: "ts-loader",
+				use: require.resolve("ts-loader"),
 				exclude: /node_modules/
 			},
 		]
@@ -41,17 +51,15 @@ module.exports = {
 			".js",
 		],
 		plugins: [
+			// note(jae): 2021-07-18
+			// This plugin uses the "paths" from tsconfig.json so that we don't need to configure
+			// "alias" entries in these webpack config files
 			new TsconfigPathsPlugin()
 		]
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
 			template: "./src/index.html",
-			//hash: true,
-			//title: "My App",
-			//myPageHeader: "Hello World",
-			//template: "./src/index.html",
-			//filename:  "./dist/index.html",
 		})
 	],
 	output: {
