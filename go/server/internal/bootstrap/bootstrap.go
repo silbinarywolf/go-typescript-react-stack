@@ -59,6 +59,13 @@ func InitAndListen() (*Bootstrap, error) {
 		return nil, fmt.Errorf("failed to add .js mimetype: %w", err)
 	}
 
+	// todo(jae): 2021-07-18
+	// figure out how to embed assets onto the web server
+	/* fs, err := staticfiles.EmbeddedFiles.Open("static/index.html")
+	if err != nil {
+		return nil, err
+	} */
+
 	http.HandleFunc("/", handleHomePage)
 	/* http.HandleFunc("/static/main.css", func(w http.ResponseWriter, r *http.Request) {
 		// Manually serving CSS rather than using http.FileServer because Golang's in-built

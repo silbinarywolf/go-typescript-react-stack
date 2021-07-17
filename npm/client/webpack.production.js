@@ -1,3 +1,5 @@
+const path = require("path");
+
 const TerserPlugin = require("terser-webpack-plugin");
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { mergeWithRules } = require('webpack-merge');
@@ -38,7 +40,10 @@ module.exports = mergeWithRules({
     ],
     output: {
         filename: "[name].[fullhash].min.js",
-		clean: true,
+        clean: true,
+        // note(jae): 2021-07-18
+        // build production files directly into the Go server
+        path: path.resolve(__dirname, "../../go/server/internal/staticfiles/dist"),
 	},
     optimization: {
         minimize: true,

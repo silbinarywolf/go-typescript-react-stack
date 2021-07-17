@@ -1,0 +1,3 @@
+# ignore /static as this gets built by the NPM compilation tools and can
+# be placed into a remote directory (ie. Go server, as of 2021-07-18)
+dist

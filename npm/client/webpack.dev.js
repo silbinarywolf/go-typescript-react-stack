@@ -34,5 +34,8 @@ module.exports = mergeWithRules({
 		contentBase: path.join(__dirname, "dist"),
 		compress: true,
 		port: 9000,
+		// note(jae): 2021-07-18
+		// write files out to disk for inspection during dev
+		// writeToDisk: true,
 	},
 });
