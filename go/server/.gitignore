@@ -1,0 +1,4 @@
+# ignore for Windows
+/server.exe
+# ignore for Linux / Mac / etc
+/server
