@@ -70,7 +70,8 @@ module.exports = {
 	],
 	output: {
 		filename: "bundle.min.js",
-		path: path.resolve(__dirname, "dist")
+		path: path.resolve(__dirname, "dist"),
+		clean: true
 	},
 	devServer: {
 		contentBase: path.join(__dirname, "dist"),

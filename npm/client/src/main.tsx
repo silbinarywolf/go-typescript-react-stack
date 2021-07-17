@@ -1,15 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import { Button } from "~/ui/Button/Button"
+import { App } from "~/core/App/App"
 
 function main(): void {
     ReactDOM.render(
-		<React.Fragment>
-			<Button
-                label="Test Button"
-            />
-	    </React.Fragment>,
+		<App/>,
 	    document.getElementById("app")
 	);
 }

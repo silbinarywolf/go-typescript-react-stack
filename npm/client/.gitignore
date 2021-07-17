@@ -1,2 +1,4 @@
+# ignore node_modules to avoid commiting >95mb of dependencies
 /node_modules
+# ignore /dist as this gets built by the compilation tools
 /dist
