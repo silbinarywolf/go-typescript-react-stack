@@ -1,7 +1,5 @@
 .button {
-    color: white;
-}
-
-.hey {
-    color: black;
+    color: #fff;
+	background: #333;
+	padding: 8px 16px;
 }
