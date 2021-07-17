@@ -21,6 +21,9 @@ module.exports = mergeWithRules({
 				test: /\.module.css$/,
 				use: [
 					{
+						// note(jae): 2021-07-18
+            			// For development, we just want our styles embedded in a <style> tag
+						// on the page for faster loading.
 						loader: require.resolve("style-loader"),
 					},
 				]

@@ -1,4 +1,4 @@
-# ignore node_modules to avoid commiting >95mb of dependencies
+# ignore node_modules to avoid commiting >95mb of dependencies to the VCS repository
 /node_modules
 # ignore /dist as this gets built by the compilation tools
 /dist
