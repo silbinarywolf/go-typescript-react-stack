@@ -3,7 +3,19 @@ const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
-	entry: path.resolve(__dirname, "src/main.tsx"),
+	entry: {
+		reactvendors: { 
+			import: [
+				require.resolve('react'), 
+				require.resolve('react-dom'),
+			],
+			runtime: 'runtime',
+		},
+		app: {
+			import: path.resolve(__dirname, "src/main.tsx"),
+			dependOn: ['reactvendors'],
+		},
+	},
 	module: {
 		rules: [
 			{
@@ -80,7 +92,6 @@ module.exports = {
 		})
 	],
 	output: {
-		filename: "bundle.min.js",
 		path: path.resolve(__dirname, "dist"),
 	}
 };

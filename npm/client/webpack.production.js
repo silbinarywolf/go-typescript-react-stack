@@ -37,7 +37,7 @@ module.exports = mergeWithRules({
 		}),
     ],
     output: {
-        filename: "bundle.[fullhash].min.js",
+        filename: "[name].[fullhash].min.js",
 		clean: true,
 	},
     optimization: {
