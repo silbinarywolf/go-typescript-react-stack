@@ -2,18 +2,26 @@ package bootstrap
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"mime"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/staticfiles"
 )
 
 // Bootstrap contains information from starting up the application
 type Bootstrap struct {
 	httpServer *http.Server
 	listener   net.Listener
+}
+
+type app struct {
+	fileMap map[string][]byte
 }
 
 // Serve calls the underlying Go implementation. Copy-pasted documentation below.
@@ -49,32 +57,64 @@ func InitAndListen() (*Bootstrap, error) {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// note(jae): 2021-07-17
-	// without this, the http server will *not* serve CSS files correctly and they won't be loaded
-	// by the browser
-	if err := mime.AddExtensionType(".css", "text/css; charset=utf-8"); err != nil {
-		return nil, fmt.Errorf("failed to add .css mimetype: %w", err)
-	}
-	if err := mime.AddExtensionType(".js", "text/javascript; charset=utf-8"); err != nil {
-		return nil, fmt.Errorf("failed to add .js mimetype: %w", err)
+	// Serve files
+	{
+		// note(jae): 2021-07-18
+		// This implementation should be simplified and improved later
+		// There's probably some first-class Go functions I can use instead
+
+		var fileMap map[string][]byte
+		{
+			dir := "dist"
+			fileInfoList, err := staticfiles.Files.ReadDir(dir)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read staticfiles from %s: %w", dir, err)
+			}
+			fileMap = make(map[string][]byte, len(fileInfoList))
+			for _, fileInfo := range fileInfoList {
+				basename := fileInfo.Name()
+				filename := dir + "/" + basename
+				f, err := staticfiles.Files.Open(filename)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read %s: %w", filename, err)
+				}
+				data, err := io.ReadAll(f)
+				if err != nil {
+					return nil, fmt.Errorf("failed to ReadAll %s: %w", data, err)
+				}
+				fileMap[basename] = data
+			}
+		}
+		for f, d := range fileMap {
+			// capture values for closure below
+			filename := f
+			data := d
+			http.HandleFunc("/"+filename, func(w http.ResponseWriter, r *http.Request) {
+				fileExt := filepath.Ext(filename)
+				ctype := mime.TypeByExtension(fileExt)
+				if ctype == "" {
+					http.Error(w, "can't determine mime type for file: "+filename, http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", ctype)
+				if _, err := w.Write(data); err != nil {
+					log.Printf("error serving %s: %s", filename, err)
+					return
+				}
+			})
+		}
+		filename := "index.html"
+		d := fileMap[filename]
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			if _, err := w.Write(d); err != nil {
+				log.Printf("error serving %s: %s", filename, err)
+				return
+			}
+		})
 	}
 
-	// todo(jae): 2021-07-18
-	// figure out how to embed assets onto the web server
-	/* fs, err := staticfiles.EmbeddedFiles.Open("static/index.html")
-	if err != nil {
-		return nil, err
-	} */
+	//http.HandleFunc("/", handleHomePage)
 
-	http.HandleFunc("/", handleHomePage)
-	/* http.HandleFunc("/static/main.css", func(w http.ResponseWriter, r *http.Request) {
-		// Manually serving CSS rather than using http.FileServer because Golang's in-built
-		// detection methods can't really determine if the file is CSS or not.
-		// Chrome complains if you try to load a CSS file with "text/plain". (has errors in Chrome DevTools)
-		// See "DetectContentType" in the standard library, in file: net\http\sniff.go
-		w.Header().Add("Content-Type", "text/css; charset=utf-8")
-		http.ServeFile(w, r, r.URL.Path[1:])
-	}) */
 	httpServer := &http.Server{
 		Addr:    ":" + strconv.Itoa(config.WebServer.Port),
 		Handler: nil,
@@ -83,10 +123,11 @@ func InitAndListen() (*Bootstrap, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Bootstrap{
+	bs := &Bootstrap{
 		httpServer: httpServer,
 		listener:   ln,
-	}, nil
+	}
+	return bs, nil
 }
 
 func handleHomePage(w http.ResponseWriter, r *http.Request) {
