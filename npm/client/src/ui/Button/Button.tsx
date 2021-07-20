@@ -4,6 +4,7 @@ import styles from "./Button.module.css"
 
 interface ButtonProps {
 	label: string;
+	'data-testid'?: string;
 }
 
 export function Button(props: ButtonProps): JSX.Element {
@@ -16,6 +17,7 @@ export function Button(props: ButtonProps): JSX.Element {
 			className={[
 				styles.button,
 			].join(' ')}
+			data-testid={props['data-testid']}
 		>
 			{label}
 		</button>

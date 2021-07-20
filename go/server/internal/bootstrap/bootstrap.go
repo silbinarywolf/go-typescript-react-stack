@@ -35,7 +35,7 @@ type app struct {
 // Serve always returns a non-nil error and closes l.
 // After Shutdown or Close, the returned error is ErrServerClosed.
 func (bs *Bootstrap) Serve() error {
-	log.Printf("Serving on http://localhost%s/", bs.httpServer.Addr)
+	log.Printf("serving on http://localhost%s/", bs.httpServer.Addr)
 	if err := bs.httpServer.Serve(bs.listener); err != nil {
 		return err
 	}
@@ -69,13 +69,15 @@ func InitAndListen() (*Bootstrap, error) {
 	// point in time. However we need to see what real use-cases come up first
 	// before doing that work.
 	{
-		if err := examplemodule.New(); err != nil {
+		if _, err := examplemodule.New(); err != nil {
 			return nil, fmt.Errorf(`failed to init module: %w`, err)
 		}
 	}
 
 	httpServer := &http.Server{
-		Addr:    ":" + strconv.Itoa(config.WebServer.Port),
+		Addr: ":" + strconv.Itoa(config.WebServer.Port),
+		// note(jae): 2021-07-20
+		// if handler is set to nil, then Go will set it to "DefaultServeMux"
 		Handler: http.DefaultServeMux,
 	}
 	ln, err := net.Listen("tcp", httpServer.Addr)
@@ -87,17 +89,4 @@ func InitAndListen() (*Bootstrap, error) {
 		listener:   ln,
 	}
 	return bs, nil
-}
-
-func handleHomePage(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "boo", http.StatusInternalServerError)
-	// type TemplateData struct {
-	//	Contacts []contact.Contact
-	//}
-	//var templateData TemplateData
-	//templateData.Contacts = contact.GetAll()
-	//if err := templates.ExecuteTemplate(w, "index.html", templateData); err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
 }

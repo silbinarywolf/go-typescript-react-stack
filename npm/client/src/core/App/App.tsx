@@ -9,6 +9,7 @@ export function App(): JSX.Element {
 			<React.Fragment>
 				<Button
 					label="Test Button"
+					data-testid="testButton"
 				/>
 			</React.Fragment>
 		</ErrorBoundary>
