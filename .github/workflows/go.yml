@@ -42,5 +42,7 @@ jobs:
         - name: End-To-End Tests
           run: |
             chrome --version
-            cd go/server/e2etest
+            cd go/server
+            cp config.example.json config.json
+            cd e2etest
             go test
