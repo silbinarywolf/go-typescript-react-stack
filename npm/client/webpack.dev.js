@@ -30,6 +30,18 @@ module.exports = mergeWithRules({
 			},
 		],
 	},
+	plugins: [
+		new HtmlWebpackPlugin({
+			template: "./src/index.html",
+		}),
+		new webpack.DefinePlugin({
+			// note(jae): 2021-07-20
+            // These are global variables. 
+            // We add definitions to the "src/custom.d.ts" file so that TypeScript can see them.
+			API_ENDPOINT: JSON.stringify(':8080'),
+			VERSION: JSON.stringify('development'),
+		}),
+	],
     devServer: {
 		contentBase: path.join(__dirname, "dist"),
 		compress: true,

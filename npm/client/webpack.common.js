@@ -90,7 +90,7 @@ module.exports = {
 	plugins: [
 		new HtmlWebpackPlugin({
 			template: "./src/index.html",
-		})
+		}),
 	],
 	output: {
 		path: path.resolve(__dirname, "dist"),

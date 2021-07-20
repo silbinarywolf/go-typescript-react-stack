@@ -2,15 +2,13 @@ package bootstrap
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"mime"
 	"net"
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/examplemodule"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/staticfiles"
 )
 
@@ -37,6 +35,7 @@ type app struct {
 // Serve always returns a non-nil error and closes l.
 // After Shutdown or Close, the returned error is ErrServerClosed.
 func (bs *Bootstrap) Serve() error {
+	log.Printf("Serving on http://localhost%s/", bs.httpServer.Addr)
 	if err := bs.httpServer.Serve(bs.listener); err != nil {
 		return err
 	}
@@ -57,67 +56,27 @@ func InitAndListen() (*Bootstrap, error) {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Serve files
-	{
-		// note(jae): 2021-07-18
-		// This implementation should be simplified and improved later
-		// There's probably some first-class Go functions I can use instead
-
-		var fileMap map[string][]byte
-		{
-			dir := "dist"
-			fileInfoList, err := staticfiles.Files.ReadDir(dir)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read staticfiles from %s: %w", dir, err)
-			}
-			fileMap = make(map[string][]byte, len(fileInfoList))
-			for _, fileInfo := range fileInfoList {
-				basename := fileInfo.Name()
-				filename := dir + "/" + basename
-				f, err := staticfiles.Files.Open(filename)
-				if err != nil {
-					return nil, fmt.Errorf("failed to read %s: %w", filename, err)
-				}
-				data, err := io.ReadAll(f)
-				if err != nil {
-					return nil, fmt.Errorf("failed to ReadAll %s: %w", data, err)
-				}
-				fileMap[basename] = data
-			}
-		}
-		for f, d := range fileMap {
-			// capture values for closure below
-			filename := f
-			data := d
-			http.HandleFunc("/"+filename, func(w http.ResponseWriter, r *http.Request) {
-				fileExt := filepath.Ext(filename)
-				ctype := mime.TypeByExtension(fileExt)
-				if ctype == "" {
-					http.Error(w, "can't determine mime type for file: "+filename, http.StatusInternalServerError)
-					return
-				}
-				w.Header().Set("Content-Type", ctype)
-				if _, err := w.Write(data); err != nil {
-					log.Printf("error serving %s: %s", filename, err)
-					return
-				}
-			})
-		}
-		filename := "index.html"
-		d := fileMap[filename]
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			if _, err := w.Write(d); err != nil {
-				log.Printf("error serving %s: %s", filename, err)
-				return
-			}
-		})
+	// Serve asset files
+	if err := staticfiles.AddRoutes(); err != nil {
+		return nil, fmt.Errorf(`failed to setup serving ".js, .css" assets: %w`, err)
 	}
 
-	//http.HandleFunc("/", handleHomePage)
+	// Setup modules
+	//
+	// note(jae): 2021-07-20
+	// I have a hunch that we'll probably want to change this so modules
+	// "register" themselves and then all get initialized naively at this
+	// point in time. However we need to see what real use-cases come up first
+	// before doing that work.
+	{
+		if err := examplemodule.New(); err != nil {
+			return nil, fmt.Errorf(`failed to init module: %w`, err)
+		}
+	}
 
 	httpServer := &http.Server{
 		Addr:    ":" + strconv.Itoa(config.WebServer.Port),
-		Handler: nil,
+		Handler: http.DefaultServeMux,
 	}
 	ln, err := net.Listen("tcp", httpServer.Addr)
 	if err != nil {
