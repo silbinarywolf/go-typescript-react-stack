@@ -32,4 +32,15 @@ jobs:
         - name: Backend Unit and Integration Tests
           run: |
             cd go/server/internal
-            go test ./...
+            go test -tags dev ./...
+
+        - name: Setup Chrome
+          uses: browser-actions/setup-chrome@latest
+          run: chrome --version
+        
+        # note(jae): 2021-07-20
+        # this step requires "Frontend React/TypeScript Build" to run first.
+        - name: End-To-End Tests
+          run: |
+            cd go/server/e2etest
+            go test
