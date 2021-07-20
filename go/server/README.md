@@ -1,4 +1,6 @@
-# Go Server
+# Go Backend Web Server
+
+[![Actions Status](https://github.com/silbinarywolf/go-typescript-react-stack/workflows/Go/badge.svg)](https://github.com/silbinarywolf/go-typescript-react-stack/actions)
 
 ## Requirements
 

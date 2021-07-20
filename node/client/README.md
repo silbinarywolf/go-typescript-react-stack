@@ -1,5 +1,7 @@
 # TypeScript / React
 
+[![Actions Status](https://github.com/silbinarywolf/go-typescript-react-stack/workflows/Go/badge.svg)](https://github.com/silbinarywolf/go-typescript-react-stack/actions)
+
 ## Requirements
 
 * Node v14.15.0+ (LTS)
