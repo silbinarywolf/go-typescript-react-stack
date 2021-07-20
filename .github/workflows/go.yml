@@ -1,0 +1,33 @@
+name: Go
+on: [push]
+jobs:
+  linux:
+      name: Go ${{ matrix.go }} on Ubuntu
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          go: ['1.16']
+      env:
+        name: ubuntu
+      steps:
+        - name: Check out code
+          uses: actions/checkout@v2
+
+        - name: Frontend React/TypeScript Build
+        - uses: actions/setup-node@v2
+          with:
+            node-version: '14'
+        - run: |
+            cd node/client
+            npm install
+            npm run-script build
+
+        - name: Setup Go
+          uses: actions/setup-go@v2
+          with:
+            go-version: ${{ matrix.go }}
+
+        - name: Backend Unit and Integration Tests
+          run: |
+            cd go/server/internal
+            go test ./...
