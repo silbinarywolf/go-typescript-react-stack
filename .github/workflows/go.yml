@@ -13,11 +13,13 @@ jobs:
         - name: Check out code
           uses: actions/checkout@v2
 
-        - name: Frontend React/TypeScript Build
-        - uses: actions/setup-node@v2
+        - name: Setup Node
+          uses: actions/setup-node@v2
           with:
             node-version: '14'
-        - run: |
+
+        - name: Frontend React/TypeScript Build
+          run: |
             cd node/client
             npm install
             npm run-script build
