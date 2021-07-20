@@ -1,0 +1,52 @@
+name: TypeScript/React + Go
+on: [push]
+jobs:
+  linux:
+      name: Ubuntu
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          go: ['1.16']
+      env:
+        name: ubuntu
+      steps:
+        - name: Check out code
+          uses: actions/checkout@v2
+
+        - name: Setup Node
+          uses: actions/setup-node@v2
+          with:
+            node-version: '14'
+
+        - name: Frontend React/TypeScript Build
+          run: |
+            cd node/client
+            npm install
+            npm run-script build
+
+        - name: Setup Go
+          uses: actions/setup-go@v2
+          with:
+            go-version: ${{ matrix.go }}
+
+        - name: Backend Unit and Integration Tests
+          run: |
+            cd go/server/internal
+            go test -tags dev ./...
+
+        #- name: Setup Chrome
+        #  uses: browser-actions/setup-chrome@latest
+        
+        # note(jae): 2021-07-20
+        # this step requires "Frontend React/TypeScript Build" to run first.
+        #
+        # note(jae); 2021-07-20
+        # this won't work right now, gets the error:
+        # "e2etest_test.go:107: button click failed: chrome failed to start: "
+        #- name: End-To-End Tests
+        #  run: |
+        #    chrome --version
+        #    cd go/server
+        #    cp config.example.json config.json
+        #    cd e2etest
+        #    go test

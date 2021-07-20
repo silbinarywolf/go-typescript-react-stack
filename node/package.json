@@ -1,0 +1,10 @@
+{
+	"name": "node-root",
+	"private": true,
+	"engines": {
+		"node": ">=14.16.0"
+	},
+	"workspaces": [
+		"client"
+	]
+}
