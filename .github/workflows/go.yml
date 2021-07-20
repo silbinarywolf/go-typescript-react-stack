@@ -2,7 +2,7 @@ name: Go
 on: [push]
 jobs:
   linux:
-      name: Go ${{ matrix.go }} on Ubuntu
+      name: Ubuntu
       runs-on: ubuntu-latest
       strategy:
         matrix:
@@ -34,15 +34,19 @@ jobs:
             cd go/server/internal
             go test -tags dev ./...
 
-        - name: Setup Chrome
-          uses: browser-actions/setup-chrome@latest
+        #- name: Setup Chrome
+        #  uses: browser-actions/setup-chrome@latest
         
         # note(jae): 2021-07-20
         # this step requires "Frontend React/TypeScript Build" to run first.
-        - name: End-To-End Tests
-          run: |
-            chrome --version
-            cd go/server
-            cp config.example.json config.json
-            cd e2etest
-            go test
+        #
+        # note(jae); 2021-07-20
+        # this won't work right now, gets the error:
+        # "e2etest_test.go:107: button click failed: chrome failed to start: "
+        #- name: End-To-End Tests
+        #  run: |
+        #    chrome --version
+        #    cd go/server
+        #    cp config.example.json config.json
+        #    cd e2etest
+        #    go test
