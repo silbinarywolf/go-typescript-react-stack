@@ -12,8 +12,25 @@ import (
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/bootstrap"
 )
 
+// testEndpoint is the server that Chrome tests against.
+// ie. "localhost:8080"
+var testServerHost string
+
 // TestMain will execute before all tests and allows us to do setup/teardown
 func TestMain(m *testing.M) {
+	if isDevelopmentMode {
+		// note(jae): 2021-07-20
+		// Points at the local development server that
+		// can be started with "npm run-script start" from the "npm/client" folder
+		testServerHost = "localhost:9000"
+	} else {
+		// todo(jae): 2021-07-20
+		// Ideally this should read the port from "config.json"
+
+		// This points at the default production server port
+		testServerHost = "localhost:8080"
+	}
+
 	// Search for "config.json" in current directory
 	// If it's not there, look up a few directories.
 	//
@@ -55,7 +72,7 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("%+w", err))
 	}
 
-	// start serving
+	// start serving http requests in a seperate goroutine
 	go func() {
 		if err := bs.Serve(); err != nil {
 			panic(fmt.Errorf("%+w", err))
@@ -83,7 +100,7 @@ func TestButtonClick(t *testing.T) {
 	err := RunWithTimeout(
 		ctx,
 		5*time.Second,
-		chromedp.Navigate(`http://localhost:8080/`),
+		chromedp.Navigate(`http://`+testServerHost+`/`),
 		chromedp.Click(`[data-testid="testButton"]`, chromedp.NodeVisible, chromedp.ByQuery),
 	)
 	if err != nil {

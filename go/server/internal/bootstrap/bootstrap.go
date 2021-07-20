@@ -36,9 +36,14 @@ type app struct {
 // After Shutdown or Close, the returned error is ErrServerClosed.
 func (bs *Bootstrap) Serve() error {
 	log.Printf("serving on http://localhost%s/", bs.httpServer.Addr)
+
+	// todo(jae): 2021-07-20
+	// In a *real* production server, we'd want this to call "ServeTLS" for HTTPS.
+	// However for development, we'd still probably want "Serve" to be called.
 	if err := bs.httpServer.Serve(bs.listener); err != nil {
 		return err
 	}
+
 	return nil
 }
 
