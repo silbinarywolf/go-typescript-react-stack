@@ -1,5 +1,9 @@
 # Go Server
 
+## Requirements
+
+* Go 1.16+
+
 ## How to build production
 
 - You'll need to build the production [client code](/node/client).

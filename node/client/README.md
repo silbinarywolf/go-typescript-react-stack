@@ -1,5 +1,9 @@
 # TypeScript / React
 
+## Requirements
+
+* Node v14.15.0+ (LTS)
+
 ## Install node_modules before running development or production
 
 - Open a terminal and run the following.
