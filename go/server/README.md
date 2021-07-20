@@ -2,7 +2,7 @@
 
 ## How to build production
 
-- You'll need to build the production [client code](/npm/client).
+- You'll need to build the production [client code](/node/client).
 
 ⚠️ *If you don't do this step, you'll get the following Go compilation error as the server can't find and embed the \*.js, \*.css files*
 
@@ -40,7 +40,7 @@ These tests will launch the local web server and run Chrome.
 
 ### Run for production
 
-- You'll need to build the production [client code](/npm/client).
+- You'll need to build the production [client code](/node/client).
 
 ⚠️ *If you don't do this step, you'll get the following Go compilation error as the server can't find and embed the \*.js, \*.css files*
 
@@ -56,7 +56,7 @@ go test
 
 ### Run for local development
 
-- You'll need to run the local Node web server [client code](/npm/client).
+- You'll need to run the local Node web server [client code](/node/client).
 
 ⚠️ *If you don't do this step, your end-to-end test will timeout and give a message similar to the following:*
 

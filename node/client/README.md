@@ -1,6 +1,6 @@
 # TypeScript / React
 
-## Install modules before running development or production
+## Install node_modules before running development or production
 
 - Open a terminal and run the following.
 

@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	if isDevelopmentMode {
 		// note(jae): 2021-07-20
 		// Points at the local development server that
-		// can be started with "npm run-script start" from the "npm/client" folder
+		// can be started with "npm run-script start" from the "node/client" folder
 		testServerHost = "localhost:9000"
 	} else {
 		// todo(jae): 2021-07-20
