@@ -12,8 +12,6 @@ import (
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/bootstrap"
 )
 
-const basePath = `http://localhost:8080/`
-
 // TestMain will execute before all tests and allows us to do setup/teardown
 func TestMain(m *testing.M) {
 	// Search for "config.json" in current directory
@@ -81,7 +79,7 @@ func TestButtonClick(t *testing.T) {
 	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
-	// run task list
+	// run chrome
 	err := RunWithTimeout(
 		ctx,
 		5*time.Second,
