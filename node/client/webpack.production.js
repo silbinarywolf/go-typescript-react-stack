@@ -15,7 +15,17 @@ let commitHash;
 			.execSync("git rev-parse HEAD")
 			.toString();
 	} catch (e) {
-		throw new Error("unable to get Git Commit HASH for Version string: " + e.toString());
+		let hasNoGitRepository = e.toString().includes("not a git repository");
+		if (hasNoGitRepository !== true) {
+			throw new Error("unable to get Git Commit HASH for Version string: " + e.toString());
+		}
+		// note(jae): 2021-07-21
+		// handle case where someone downloaded this repository from Github without Git and
+		// just wants to try it out.
+		//
+		// this case still prints "fatal: not a git repository (or any of the parent directories): .git"
+		// but it works.
+		commitHash = "novcs";
 	}
 	if (!commitHash) {
 		throw new Error("unable to get Git Commit HASH for Version string: empty value returned");

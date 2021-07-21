@@ -1,0 +1,3 @@
+# ignore CSS Module type definitions as they're auto-generated
+# and making the linter update auto-generated files is not a good idea.
+/**/*.css.d.ts
