@@ -1,13 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import { App } from "~/core/App/App"
+import { App } from "~/core/App/App";
 
 function main(): void {
 	if (!VERSION) {
 		throw new Error("Missing VERSION constant.");
 	}
-    ReactDOM.render(
+	ReactDOM.render(
 		<App/>,
 	    document.getElementById("app")
 	);

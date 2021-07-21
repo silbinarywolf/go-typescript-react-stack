@@ -18,11 +18,12 @@ jobs:
           with:
             node-version: '14'
 
-        - name: Frontend React/TypeScript Build
+        - name: Frontend React/TypeScript Build And Lint
           run: |
             cd node/client
             npm install
             npm run-script build
+            npm run-script lint
 
         - name: Setup Go
           uses: actions/setup-go@v2
