@@ -1,10 +1,10 @@
 import React from "react";
 
-import styles from "./Button.module.css"
+import styles from "./Button.module.css";
 
 interface ButtonProps {
 	label: string;
-	'data-testid'?: string;
+	"data-testid"?: string;
 }
 
 export function Button(props: ButtonProps): JSX.Element {
@@ -16,10 +16,10 @@ export function Button(props: ButtonProps): JSX.Element {
 			type="button"
 			className={[
 				styles.button,
-			].join(' ')}
-			data-testid={props['data-testid']}
+			].join(" ")}
+			data-testid={props["data-testid"]}
 		>
 			{label}
 		</button>
-	)
+	);
 }

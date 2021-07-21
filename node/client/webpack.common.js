@@ -7,14 +7,14 @@ module.exports = {
 	entry: {
 		reactvendors: { 
 			import: [
-				require.resolve('react'), 
-				require.resolve('react-dom'),
+				require.resolve("react"), 
+				require.resolve("react-dom"),
 			],
-			runtime: 'runtime',
+			runtime: "runtime",
 		},
 		app: {
 			import: path.resolve(__dirname, "src/main.tsx"),
-			dependOn: ['reactvendors'],
+			dependOn: ["reactvendors"],
 		},
 	},
 	module: {

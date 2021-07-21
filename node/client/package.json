@@ -3,7 +3,9 @@
 	"private": true,
 	"scripts": {
 		"start": "webpack serve --config webpack.dev.js",
-		"build": "webpack --config webpack.production.js"
+		"build": "webpack --config webpack.production.js",
+		"lint": "eslint *.js src/**/*.tsx src/**/*.ts",
+		"lint:fix": "eslint --fix *.js src/**/*.tsx src/**/*.ts"
 	},
 	"engines": {
 		"node": ">=14.15.0"
