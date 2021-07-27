@@ -1,31 +1,46 @@
 package examplemodule
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
 
-func TestCall(t *testing.T) {
-	// initialize module
-	//
-	// note(jae): 2021-07-20
-	// we could consider moving this initialization into a "TestMain" function
-	// so that we only initialize the module ONCE per suite of tests rather than per test.
-	// But we can decide if that's worth doing later.
-	module, err := New()
+var (
+	// testModule can be accessed by various tests
+	testModule *ExampleModule
+)
+
+func TestMain(m *testing.M) {
+	// initialize module once before running all tests.
+	// this includes adding routes like "/api/[MODULE]/call"
+	var err error
+	testModule, err = New()
 	if err != nil {
-		t.Fatalf(`failed to init module: %s`, err)
+		panic(fmt.Sprintf(`failed to init module: %s`, err))
 	}
 
+	// Run Test*** functions
+	os.Exit(m.Run())
+}
+
+func TestCall(t *testing.T) {
 	// create request, setup recorder, then fire request at endpoint
-	req, err := http.NewRequest("GET", modulePath+"/call", nil)
+	url := modulePath + "/call"
+	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		t.Fatalf(`failed to create request: %s`, err)
 	}
+	h, pattern := http.DefaultServeMux.Handler(req)
+	if pattern == "" {
+		t.Fatalf("failed to find route: %s\nHas the route been registered? (This occurs during module initialization)", url)
+	}
 	rec := httptest.NewRecorder()
-	http.HandlerFunc(module.handleCall).ServeHTTP(rec, req)
+	h.ServeHTTP(rec, req)
 
 	// Check status code matches
 	if status := rec.Code; status != http.StatusInternalServerError {
