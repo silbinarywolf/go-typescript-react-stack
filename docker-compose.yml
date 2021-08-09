@@ -1,0 +1,9 @@
+version: "2"
+
+services:
+  db:
+    image: postgres
+    restart: always
+    expose:
+      # Publishes the port to other containers but NOT to host machine
+      - "5432"

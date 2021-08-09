@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -10,16 +11,15 @@ import (
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/examplemodule"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/staticfiles"
+
+	"github.com/jackc/pgx/v4"
 )
 
 // Bootstrap contains information from starting up the application
 type Bootstrap struct {
+	db         *pgx.Conn
 	httpServer *http.Server
 	listener   net.Listener
-}
-
-type app struct {
-	fileMap map[string][]byte
 }
 
 // Serve calls the underlying Go implementation. Copy-pasted documentation below.
@@ -35,6 +35,9 @@ type app struct {
 // Serve always returns a non-nil error and closes l.
 // After Shutdown or Close, the returned error is ErrServerClosed.
 func (bs *Bootstrap) Serve() error {
+	// close connection to database if serving is cancelled / stopped
+	defer bs.db.Close(context.Background())
+
 	log.Printf("serving on http://localhost%s/", bs.httpServer.Addr)
 
 	// todo(jae): 2021-07-20
@@ -61,7 +64,13 @@ func InitAndListen() (*Bootstrap, error) {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Serve asset files
+	// Connect to postgres
+	db, err := pgx.Connect(context.Background(), config.Database.URL)
+	if err != nil {
+		return nil, fmt.Errorf(`unable to connect to database: %w`, err)
+	}
+
+	// Add serving static asset files to routes
 	if err := staticfiles.AddRoutes(); err != nil {
 		return nil, fmt.Errorf(`failed to setup serving ".js, .css" assets: %w`, err)
 	}
@@ -90,6 +99,7 @@ func InitAndListen() (*Bootstrap, error) {
 		return nil, err
 	}
 	bs := &Bootstrap{
+		db:         db,
 		httpServer: httpServer,
 		listener:   ln,
 	}

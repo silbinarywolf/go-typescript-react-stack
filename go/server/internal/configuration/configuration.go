@@ -10,11 +10,16 @@ import (
 
 type Config struct {
 	WebServer     WebServerConfig
+	Database      DatabaseConfig
 	DataDirectory string
 }
 
 type WebServerConfig struct {
 	Port int
+}
+
+type DatabaseConfig struct {
+	URL string
 }
 
 func LoadConfig() (*Config, error) {
@@ -65,6 +70,9 @@ func validateConfig(config Config) error {
 	}
 	if config.WebServer.Port == 0 {
 		errorList.errors = append(errorList.errors, errors.New("WebServer.Port cannot be 0"))
+	}
+	if config.Database.URL == "" {
+		errorList.errors = append(errorList.errors, errors.New("Database.URL cannot be empty"))
 	}
 	// note(jae): 2021-07-17
 	// keeping this here as an example of doing deeper config validation
