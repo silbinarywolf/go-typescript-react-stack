@@ -1,3 +1,4 @@
+const webpack = require("webpack");
 const path = require("path");
 const { mergeWithRules } = require("webpack-merge");
 
@@ -31,9 +32,6 @@ module.exports = mergeWithRules({
 		],
 	},
 	plugins: [
-		new HtmlWebpackPlugin({
-			template: "./src/index.html",
-		}),
 		new webpack.DefinePlugin({
 			// note(jae): 2021-07-20
 			// These are global variables. 

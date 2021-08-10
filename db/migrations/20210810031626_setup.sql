@@ -13,10 +13,9 @@ create table "Permission" (
     "ID" integer generated always as identity not null,
     "Name" text,
     "Type" text,
-    primary key("ID")
+    primary key("ID"),
+    constraint "Type_Unique" unique ("Type")
 );
-
-create unique index "type_idx" on "Permission"("Type");
 
 create table "Member_Permission" (
     "MemberID" bigint,

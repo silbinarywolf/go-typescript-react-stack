@@ -10,6 +10,7 @@ import (
 
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/examplemodule"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/member"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/staticfiles"
 
 	"github.com/jackc/pgx/v4"
@@ -84,6 +85,9 @@ func InitAndListen() (*Bootstrap, error) {
 	// before doing that work.
 	{
 		if _, err := examplemodule.New(); err != nil {
+			return nil, fmt.Errorf(`failed to init module: %w`, err)
+		}
+		if _, err := member.New(db); err != nil {
 			return nil, fmt.Errorf(`failed to init module: %w`, err)
 		}
 	}
