@@ -18,11 +18,11 @@ const MemberRegisterPage = React.lazy(() => import("~/member/MemberRegisterPage"
 export default function App(): JSX.Element {
 	return (
 		<ErrorBoundary>
-			<React.Suspense 
-				fallback={<LoadingPage/>}
+			<Router
+				history={history}
 			>
-				<Router
-					history={history}
+				<React.Suspense 
+					fallback={<LoadingPage/>}
 				>
 					<Switch>
 						<Route
@@ -47,8 +47,8 @@ export default function App(): JSX.Element {
 							params={fallbackRoute.params}
 						/> */}
 					</Switch>
-				</Router>
-			</React.Suspense>
+				</React.Suspense>
+			</Router>
 		</ErrorBoundary>
 	);
 }
