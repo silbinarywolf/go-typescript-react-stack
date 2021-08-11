@@ -7,36 +7,48 @@ import {
 } from "react-router-dom"
 import { createHashHistory } from 'history';
 
-import { MemberLoginPage } from "~/member/MemberLoginPage";
+import LoadingPage from "~/core/App/LoadingPage";
 import { ErrorBoundary } from "~/ui/ErrorBoundary/ErrorBoundary";
 
-let history = createHashHistory();
+const history = createHashHistory();
 
-export function App(): JSX.Element {
+const MemberLoginPage = React.lazy(() => import("~/member/MemberLoginPage"));
+const MemberRegisterPage = React.lazy(() => import("~/member/MemberRegisterPage"));
+
+export default function App(): JSX.Element {
 	return (
 		<ErrorBoundary>
-			<Router 
-				history={history}
+			<React.Suspense 
+				fallback={<LoadingPage/>}
 			>
-				<Switch>
-					<Route
-						key="/"
-						path="/"
-						exact
-					>
-						<Redirect to={"/login"} />
-					</Route>
-					<Route
-						path={"/login"}
-						component={MemberLoginPage}
-						exact
-					/>
-					{/* <Route
-						component={fallbackRoute.component}
-						params={fallbackRoute.params}
-					/> */}
-				</Switch>
-			</Router>
+				<Router
+					history={history}
+				>
+					<Switch>
+						<Route
+							key="/"
+							path="/"
+							exact
+						>
+							<Redirect to={"/login"} />
+						</Route>
+						<Route
+							path={"/login"}
+							component={MemberLoginPage}
+							exact
+						/>
+						<Route
+							path={"/register"}
+							component={MemberRegisterPage}
+							exact
+						/>
+						{/* <Route
+							component={fallbackRoute.component}
+							params={fallbackRoute.params}
+						/> */}
+					</Switch>
+				</Router>
+			</React.Suspense>
 		</ErrorBoundary>
 	);
 }

@@ -3,7 +3,7 @@ package member
 import (
 	"net/http"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
 )
 
 // modulePath is namespace where this modules API endpoints belong

@@ -1,8 +1,9 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 import { Button } from "~/ui/Button/Button";
 
-export function MemberLoginPage(): JSX.Element {
+export default function MemberLoginPage(): JSX.Element {
 	return (
 		<div>
 			Login page
@@ -24,9 +25,14 @@ export function MemberLoginPage(): JSX.Element {
 				<input
 					id="Password"
 					name="Password"
-					type="text"
+					type="password"
 					value=""
 				/>
+			</div>
+			<div>
+				<Link to="/register">
+					Click here to register
+				</Link>
 			</div>
 			<Button
 				label="Test Button"

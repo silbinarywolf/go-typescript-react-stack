@@ -18,6 +18,7 @@
 		"@typescript-eslint/eslint-plugin": "^4.28.4",
 		"@typescript-eslint/parser": "^4.28.4",
 		"autoprefixer": "^10.3.1",
+		"axios": "^0.21.1",
 		"css-loader": "^6.0.0",
 		"css-modules-typescript-loader": "^4.0.1",
 		"cssnano": "^4.1.10",
