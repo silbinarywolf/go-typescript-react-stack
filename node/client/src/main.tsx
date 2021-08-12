@@ -17,7 +17,7 @@ function main(): void {
 		let baseURL = API_ENDPOINT;
 		if (baseURL.startsWith(':')) {
 			// If only port is specified, use current host name
-			baseURL = window.location.hostname+API_ENDPOINT;
+			baseURL = window.location.protocol + "//" + window.location.hostname+API_ENDPOINT;
 		}
 		axios.defaults.baseURL = baseURL;
 	}

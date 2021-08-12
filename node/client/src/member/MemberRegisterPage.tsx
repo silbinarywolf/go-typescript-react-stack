@@ -26,7 +26,7 @@ export default function MemberRegisterPage(): JSX.Element {
         setIsFormSubmitting(true);
         setErrorMessage('');
         try {
-            await axios.post('/api/register', formData);
+            await axios.post('/api/member/register', formData);
         } catch (e) {
             setErrorMessage(normalizeError(e));
             return;

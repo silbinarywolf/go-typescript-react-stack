@@ -5,4 +5,5 @@ go 1.16
 require (
 	github.com/chromedp/chromedp v0.7.4
 	github.com/jackc/pgx/v4 v4.13.0
+	github.com/rs/cors v1.8.0
 )

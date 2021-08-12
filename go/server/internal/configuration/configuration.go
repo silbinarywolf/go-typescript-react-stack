@@ -16,6 +16,9 @@ type Config struct {
 
 type WebServerConfig struct {
 	Port int
+	CORS struct {
+		AllowedOrigins []string
+	}
 }
 
 type DatabaseConfig struct {

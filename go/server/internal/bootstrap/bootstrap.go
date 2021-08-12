@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/rs/cors"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/examplemodule"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/member"
@@ -71,6 +72,22 @@ func InitAndListen() (*Bootstrap, error) {
 		return nil, fmt.Errorf(`unable to connect to database: %w`, err)
 	}
 
+	// Setup CORS (Cross-Origin Resource Sharing) and http server
+	httpServer := &http.Server{
+		Addr:    ":" + strconv.Itoa(config.WebServer.Port),
+		Handler: http.DefaultServeMux,
+	}
+
+	// Apply Cross-Origin Resource Sharing
+	cors := cors.New(cors.Options{
+		// TODO(jae): 2021-08-12
+		// change this to be configurable, we don't want to allow requests
+		// from localhost:9000 for production
+		AllowedOrigins: []string{"http://localhost:9000"},
+		AllowedMethods: []string{"GET", "POST", "PUT"},
+	})
+	httpServer.Handler = cors.Handler(httpServer.Handler)
+
 	// Add serving static asset files to routes
 	if err := staticfiles.AddRoutes(); err != nil {
 		return nil, fmt.Errorf(`failed to setup serving ".js, .css" assets: %w`, err)
@@ -92,12 +109,7 @@ func InitAndListen() (*Bootstrap, error) {
 		}
 	}
 
-	httpServer := &http.Server{
-		Addr: ":" + strconv.Itoa(config.WebServer.Port),
-		// note(jae): 2021-07-20
-		// if handler is set to nil, then Go will set it to "DefaultServeMux"
-		Handler: http.DefaultServeMux,
-	}
+	// Start listening for connections
 	ln, err := net.Listen("tcp", httpServer.Addr)
 	if err != nil {
 		return nil, err
