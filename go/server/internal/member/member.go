@@ -105,16 +105,37 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var hashedPassword string
 	{
 		// note(jae): 2021-08-13
+		//
+		// I chose a value of "16". At the time of writing this operation takes ~3 seconds in my machine
+		// (AMD Ryzen 5 3600 6-Core Processor, ~3.6 GHZ)
+		//
 		// Notes about the "cost" parameter are here:
 		// https://security.stackexchange.com/questions/17207/recommended-of-rounds-for-bcrypt/83382#83382
 		//
-		// tldr: bigger = slow but harder to crack
-		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 18)
+		// tldr: bigger = slower to process, which in turn means it'd take longer to crack
+		const bcryptCost = 16
+
+		// note(jae): 2021-08-13
+		// Go's bcrypt implementation does salting as well
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 		if err != nil {
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
 		hashedPassword = string(hash)
+
+		// If hashing took less than N amount of time, sleep until it takes that time
+		//
+		// note(jae): 2021-08-13
+		// we may not need this immediately, but pen testers tend to notice when something like
+		// login/registration time taken varies. We may want something like this to occur on the entire
+		//if expectedWaitTime := time.Second * 5; time.Since(now) < expectedWaitTime {
+		//	sleepTime := expectedWaitTime - time.Since(now)
+		//	if sleepTime > 0 {
+		//		time.Sleep(sleepTime)
+		//	}
+		//}
+		//log.Printf("time since: %v", time.Since(now))
 	}
 
 	// Register new member
