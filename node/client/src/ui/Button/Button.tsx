@@ -2,7 +2,7 @@ import React from "react";
 
 import styles from "./Button.module.css";
 
-type ButtonType = 'button' | 'submit';
+type ButtonType = "button" | "submit";
 
 interface ButtonProps {
 	label: string;
@@ -19,7 +19,7 @@ export function Button(props: ButtonProps): JSX.Element {
 	} = props;
 	return (
 		<button
-			type={type ? type : 'button'}
+			type={type ? type : "button"}
 			className={[
 				styles.button,
 			].join(" ")}

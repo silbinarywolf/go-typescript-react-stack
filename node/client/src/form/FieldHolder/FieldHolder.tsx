@@ -9,26 +9,26 @@ interface FieldHolderProps {
 }
 
 export function FieldHolder(props: FieldHolderProps): JSX.Element {
-    const {
-        label,
-        id,
-        children,
-    } = props;
-    return (
-        <div
-            className={[
-                styles.holder,
-            ].join(" ")}
-        >
-            <label
-                className={[
-                    styles.label,
-                ].join(" ")}
-                htmlFor={id}
-            >
-                {label}
-            </label>
-            {children}
-        </div>
-    )
+	const {
+		label,
+		id,
+		children,
+	} = props;
+	return (
+		<div
+			className={[
+				styles.holder,
+			].join(" ")}
+		>
+			<label
+				className={[
+					styles.label,
+				].join(" ")}
+				htmlFor={id}
+			>
+				{label}
+			</label>
+			{children}
+		</div>
+	);
 }

@@ -1,25 +1,25 @@
 package bootstrap
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 
-	"github.com/rs/cors"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/examplemodule"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/member"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/staticfiles"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/rs/cors"
 )
 
 // Bootstrap contains information from starting up the application
 type Bootstrap struct {
-	db         *pgx.Conn
+	db         *sqlw.DB
 	httpServer *http.Server
 	listener   net.Listener
 }
@@ -38,7 +38,7 @@ type Bootstrap struct {
 // After Shutdown or Close, the returned error is ErrServerClosed.
 func (bs *Bootstrap) Serve() error {
 	// close connection to database if serving is cancelled / stopped
-	defer bs.db.Close(context.Background())
+	defer bs.db.Close()
 
 	log.Printf("serving on http://localhost%s/", bs.httpServer.Addr)
 
@@ -63,11 +63,15 @@ func (bs *Bootstrap) Serve() error {
 func InitAndListen() (*Bootstrap, error) {
 	config, err := configuration.LoadConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
+		return nil, fmt.Errorf(`failed to load config: %w`, err)
 	}
 
-	// Connect to postgres
-	db, err := pgx.Connect(context.Background(), config.Database.URL)
+	// Connect to SQL server (postgres, as of 2021-08-13)
+	driverAndURL := strings.SplitN(config.Database.URL, "://", 2)
+	if len(driverAndURL) < 2 {
+		return nil, fmt.Errorf(`invalid database URL, expected Database.URL to be prefixed with something like "postgres://"`)
+	}
+	db, err := sqlw.Connect(driverAndURL[0], config.Database.URL)
 	if err != nil {
 		return nil, fmt.Errorf(`unable to connect to database: %w`, err)
 	}
@@ -85,6 +89,7 @@ func InitAndListen() (*Bootstrap, error) {
 		// from localhost:9000 for production
 		AllowedOrigins: []string{"http://localhost:9000"},
 		AllowedMethods: []string{"GET", "POST", "PUT"},
+		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 	})
 	httpServer.Handler = cors.Handler(httpServer.Handler)
 

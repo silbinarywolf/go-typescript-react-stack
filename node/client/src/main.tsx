@@ -15,7 +15,7 @@ function main(): void {
 	// This tells us where to send our API requests by default
 	if (API_ENDPOINT) {
 		let baseURL = API_ENDPOINT;
-		if (baseURL.startsWith(':')) {
+		if (baseURL.startsWith(":")) {
 			// If only port is specified, use current host name
 			baseURL = window.location.protocol + "//" + window.location.hostname+API_ENDPOINT;
 		}

@@ -4,8 +4,8 @@ import {
 	Redirect,
 	Switch,
 	Router,
-} from "react-router-dom"
-import { createHashHistory } from 'history';
+} from "react-router-dom";
+import { createHashHistory } from "history";
 
 import LoadingPage from "~/core/App/LoadingPage";
 import { ErrorBoundary } from "~/ui/ErrorBoundary/ErrorBoundary";

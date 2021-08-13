@@ -6,6 +6,6 @@ export default function LoadingPage(): JSX.Element {
 	return (
 		<Container>
             Loading...
-        </Container>
+		</Container>
 	);
 }

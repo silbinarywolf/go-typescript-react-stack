@@ -1,12 +1,13 @@
 -- migrate:up
 create table "Member" (
     "ID" bigint generated always as identity not null,
-    "Email" text not null,
+    "Email" varchar(254) unique not null,
     "FirstName" text,
     "LastName" text,
     "Password" text not null,
     "PasswordType" text not null,
-    primary key("ID")
+    primary key("ID"),
+    constraint "PasswordType_Validation" CHECK ("PasswordType" IN ('bcrypt'))
 );
 
 create table "Permission" (

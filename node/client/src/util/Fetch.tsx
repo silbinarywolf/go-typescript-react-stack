@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react';
-import axios, { AxiosError } from 'axios';
+import { useState, useEffect } from "react";
+import axios, { AxiosError } from "axios";
 
 /**
  * normalizeError will take an Error object and normalize it into a readable string.
  */
 export function normalizeError(err: (AxiosError & Error) | string): string {
-    if (err === undefined ||
+	if (err === undefined ||
         err === null) {
-        return '';
-    }
-    if (typeof err === 'string') {
-        return err;
-    }
-    if (err.response && err.response.data && typeof err.response.data === 'string') {
-        // get error message from backend response (AxiosError)
-        return err.response.data;
-    }
-    if (err.message) {
-        // use default error message
-        // - if this is used for response errors, then you'd get an error like "Request failed with status code 500" 
-        return err.message;
-    }
-    // unexpected case, just try to convert the error to a string naively
-    return String(err);
+		return "";
+	}
+	if (typeof err === "string") {
+		return err;
+	}
+	if (err.response && err.response.data && typeof err.response.data === "string") {
+		// get error message from backend response (AxiosError)
+		return err.response.data;
+	}
+	if (err.message) {
+		// use default error message
+		// - if this is used for response errors, then you'd get an error like "Request failed with status code 500" 
+		return err.message;
+	}
+	// unexpected case, just try to convert the error to a string naively
+	return String(err);
 }
 
 // note(jae): 2021-08-11
@@ -56,5 +56,4 @@ export function normalizeError(err: (AxiosError & Error) | string): string {
     }
   }, [url]);
   return { data, isLoading, error }
-}
- */
+}*/
