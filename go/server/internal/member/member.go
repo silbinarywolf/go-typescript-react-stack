@@ -101,8 +101,14 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Get hashed password
 	var hashedPassword string
 	{
+		// note(jae): 2021-08-13
+		// Notes about the "cost" parameter are here:
+		// https://security.stackexchange.com/questions/17207/recommended-of-rounds-for-bcrypt/83382#83382
+		//
+		// tldr: bigger = slow but harder to crack
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 18)
 		if err != nil {
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)

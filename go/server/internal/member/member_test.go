@@ -21,9 +21,14 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	// init db
 	// todo(jae): 2021-08-13
-	// think of and create a system where we can get a "test" copy of the Bootstrap with database settings.
+	// we will need a way for this to:
+	// - be configurable or to only point at a test database
+	// - ideally get the same "bag of stuff" when bootstrap is initialized
+	//
+	// For now, we just naively connect
+
+	// init db
 	db, err := sqlw.Connect("postgres", "postgres://postgres:password@localhost:5432/postgres?sslmode=disable")
 	if err != nil {
 		panic(fmt.Errorf(`unable to connect to database: %w`, err))
