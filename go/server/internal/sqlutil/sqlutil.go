@@ -4,6 +4,20 @@ import (
 	"reflect"
 )
 
+// GetDBFieldList will get all the database field names from a struct assuming
+// each field has a "db" tag
+//
+// This is used to help you generate a SELECT statement for SQL.
+//
+// ie.
+// type Member struct {
+//   Email     string `db:"Email"`
+//	 FirstName string `db:"FirstName"`
+//	 LastName  string `db:"LastName"`
+// }
+//
+// Will give you the following string:
+// "Email", "FirstName", "LastName"
 func GetDBFieldList(el interface{}) string {
 	var list string
 	walkDBFields(reflect.TypeOf(el).Elem(), func(name string) {
@@ -16,6 +30,20 @@ func GetDBFieldList(el interface{}) string {
 	return list
 }
 
+// GetDBInterpolateList will get all the database field names from a struct assuming
+// each field has a "db" tag.
+//
+// This is used to help you generate an INSERT INTO or UPDATE statement for SQL.
+//
+// ie.
+// type Member struct {
+//   Email     string `db:"Email"`
+//	 FirstName string `db:"FirstName"`
+//	 LastName  string `db:"LastName"`
+// }
+//
+// Will give you the following string, note that each field has a colon (:):
+// ":Email", ":FirstName", ":LastName"
 func GetDBInterpolateList(el interface{}) string {
 	var list string
 	walkDBFields(reflect.TypeOf(el).Elem(), func(name string) {
