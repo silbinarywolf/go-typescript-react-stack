@@ -83,7 +83,7 @@ func InitAndListen() (*Bootstrap, error) {
 	}
 
 	// Apply Cross-Origin Resource Sharing
-	cors := cors.New(cors.Options{
+	corsMiddleware := cors.New(cors.Options{
 		// TODO(jae): 2021-08-12
 		// change this to be configurable, we don't want to allow requests
 		// from localhost:9000 for production
@@ -91,7 +91,7 @@ func InitAndListen() (*Bootstrap, error) {
 		AllowedMethods: []string{"GET", "POST", "PUT"},
 		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 	})
-	httpServer.Handler = cors.Handler(httpServer.Handler)
+	httpServer.Handler = corsMiddleware.Handler(httpServer.Handler)
 
 	// Add serving static asset files to routes
 	if err := staticfiles.AddRoutes(); err != nil {

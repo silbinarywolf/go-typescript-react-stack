@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"time"
 
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/identity"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlutil"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
 	"golang.org/x/crypto/bcrypt"
@@ -45,6 +47,14 @@ func New(db *sqlw.DB) (*MemberModule, error) {
 type memberLoginRequest struct {
 	Email    string `json:"Email"`
 	Password string `json:"Password"`
+}
+
+type memberLoginResponse struct {
+	AccessToken string `json:"access_token"`
+	//TokenType    string `json:"token_type"`
+	//ExpiresIn    string `json:"expires_in"`
+	//RefreshToken string `json:"refresh_token"`
+	//Scope        string `json:"scope"`
 }
 
 func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +131,21 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Error(w, "Successfully logged in", http.StatusOK)
+	// Generate token
+	tokenString, err := identity.GenerateJWT(member.Email, time.Now())
+	if err != nil {
+		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(&memberLoginResponse{
+		AccessToken: tokenString,
+	}); err != nil {
+		http.Error(w, "Account exists but has an invalid password type", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 type memberRegistrationRequest struct {
