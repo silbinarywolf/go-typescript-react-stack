@@ -41,48 +41,82 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf(`failed to init module: %w`, err))
 	}
 
-	// Remove test data that could've be inserted previously
-	if _, err := db.NamedExecContext(
-		context.Background(),
-		`DELETE FROM "Member" WHERE "Email" = :Email`,
-		map[string]interface{}{
-			"Email": "register_good_integration_test@test.com",
-		},
-	); err != nil {
-		panic(fmt.Errorf(`failed to clear old data: %w`, err))
+	// Cleanup database
+	{
+		// Remove test data that could've be inserted previously
+		if _, err := db.NamedExecContext(
+			context.Background(),
+			`DELETE FROM "Member" WHERE "Email" = :Email`,
+			map[string]interface{}{
+				"Email": "register_good_integration_test@test.com",
+			},
+		); err != nil {
+			panic(fmt.Errorf(`failed to clear old data: %w`, err))
+		}
 	}
 
 	// Run Test*** functions
 	os.Exit(m.Run())
 }
 
-func TestRegister_Good_SimpleCase(t *testing.T) {
-	// create body for POST request
-	var body io.Reader
-	{
-		var reqRecord memberRegistrationRequest
-		reqRecord.Email = "register_good_integration_test@test.com"
-		reqRecord.Password = "test1234"
-		byteData, err := json.Marshal(&reqRecord)
-		if err != nil {
-			t.Fatalf(`failed to marshal JSON body: %s`, err)
+func TestRegister_Good_RegisterSuccess(t *testing.T) {
+	t.Run("Create account successfully", func(t *testing.T) {
+		// create body for POST request
+		var body io.Reader
+		{
+			var reqRecord memberRegistrationRequest
+			reqRecord.Email = "register_good_integration_test@test.com"
+			reqRecord.Password = "test1234"
+			byteData, err := json.Marshal(&reqRecord)
+			if err != nil {
+				t.Fatalf(`failed to marshal JSON body: %s`, err)
+			}
+			body = bytes.NewReader(byteData)
 		}
-		body = bytes.NewReader(byteData)
-	}
 
-	rec := postRegister(t, body)
+		rec := postRegister(t, body)
 
-	// Check status code matches
-	if expected := http.StatusOK; rec.Code != expected {
-		t.Errorf("returned wrong status code.\ngot: %v\nwant %v", rec.Code, expected)
-	}
+		// Check status code matches
+		if expected := http.StatusOK; rec.Code != expected {
+			t.Errorf("returned wrong status code.\ngot: %v\nwant %v", rec.Code, expected)
+		}
 
-	// Check it returns what we expect in the HTTP body
-	got := strings.TrimSpace(rec.Body.String())
-	expected := `Successfully registered`
-	if got != expected {
-		t.Errorf("returned unexpected body.\ngot: %v\nwant %v", got, expected)
-	}
+		// Check it returns what we expect in the HTTP body
+		got := strings.TrimSpace(rec.Body.String())
+		expected := `Successfully registered`
+		if got != expected {
+			t.Errorf("returned unexpected body.\ngot: %v\nwant %v", got, expected)
+		}
+	})
+
+	t.Run("Check that account is taken", func(t *testing.T) {
+		// create body for POST request
+		var body io.Reader
+		{
+			var reqRecord memberRegistrationRequest
+			reqRecord.Email = "register_good_integration_test@test.com"
+			reqRecord.Password = "test1234"
+			byteData, err := json.Marshal(&reqRecord)
+			if err != nil {
+				t.Fatalf(`failed to marshal JSON body: %s`, err)
+			}
+			body = bytes.NewReader(byteData)
+		}
+
+		rec := postRegister(t, body)
+
+		// Check status code matches
+		if expected := http.StatusConflict; rec.Code != expected {
+			t.Errorf("returned wrong status code.\ngot: %v\nwant %v", rec.Code, expected)
+		}
+
+		// Check it returns what we expect in the HTTP body
+		got := strings.TrimSpace(rec.Body.String())
+		expected := `Email is already taken`
+		if got != expected {
+			t.Errorf("returned unexpected body.\ngot: %v\nwant %v", got, expected)
+		}
+	})
 }
 
 func TestRegister_Bad_EmptyUsername(t *testing.T) {

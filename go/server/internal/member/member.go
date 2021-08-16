@@ -3,6 +3,7 @@ package member
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -41,8 +42,86 @@ func New(db *sqlw.DB) (*MemberModule, error) {
 	return module, nil
 }
 
-func (module *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "nothing has been implemented for this API yet", http.StatusInternalServerError)
+type memberLoginRequest struct {
+	Email    string `json:"Email"`
+	Password string `json:"Password"`
+}
+
+func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
+	// Decode and validate request
+	var req memberLoginRequest
+	{
+		dec := json.NewDecoder(r.Body)
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&req); err != nil {
+			http.Error(w, "Invalid fields", http.StatusBadRequest)
+			return
+		}
+		req.Email = strings.ToLower(req.Email)
+
+		if strings.TrimSpace(req.Email) == "" {
+			http.Error(w, "Email cannot be blank", http.StatusBadRequest)
+			return
+		}
+		if strings.TrimSpace(req.Password) == "" {
+			http.Error(w, "Password cannot be blank", http.StatusBadRequest)
+			return
+		}
+		_, err := mail.ParseAddress(req.Email)
+		if err != nil {
+			http.Error(w, "Email is not a valid email address", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Check if member exists
+	var member MemberRegister
+	{
+		stmt, err := m.db.PrepareNamedContext(
+			context.Background(),
+			`SELECT `+memberRegisterFieldList+` FROM "Member" WHERE "Email" = :Email`,
+		)
+		if err != nil {
+			log.Printf("login: prepared query error: %s", err)
+			http.Error(w, "Unexpected error logging in", http.StatusInternalServerError)
+			return
+		}
+		var memberList []MemberRegister
+		if err := stmt.SelectContext(
+			context.Background(),
+			&memberList,
+			map[string]interface{}{
+				"Email": req.Email,
+			},
+		); err != nil {
+			log.Printf("login: select query error: %s", err)
+			http.Error(w, "Unexpected error logging in", http.StatusInternalServerError)
+			return
+		}
+		if len(memberList) == 0 {
+			http.Error(w, "No account exists", http.StatusNotFound)
+			return
+		}
+		member = memberList[0]
+	}
+
+	// Validate password
+	switch member.PasswordType {
+	case "bcrypt":
+		if err := bcrypt.CompareHashAndPassword([]byte(member.Password), []byte(req.Password)); err != nil {
+			http.Error(w, "Invalid password", http.StatusUnauthorized)
+			return
+		}
+	default:
+		// note(jae): 2021-08-16
+		// this should never happen. Database has constraints to prevent PasswordType from being anything
+		// but "bcrypt" for now.
+		// Looking at how bcrypt works too, it's probably unlikely it'll change for another decade or so.
+		http.Error(w, "Account exists but has an invalid password type", http.StatusInternalServerError)
+		return
+	}
+
+	http.Error(w, "Successfully logged in", http.StatusOK)
 }
 
 type memberRegistrationRequest struct {
@@ -96,7 +175,7 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if rowCount > 0 {
-			http.Error(w, "Email is already taken", 500)
+			http.Error(w, "Email is already taken", http.StatusConflict)
 			return
 		}
 	}
@@ -154,6 +233,7 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
 	http.Error(w, "Successfully registered", http.StatusOK)
 }
 
