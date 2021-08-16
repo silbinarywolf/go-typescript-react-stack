@@ -27,7 +27,7 @@ export default function MemberLoginPage(): JSX.Element {
 		setErrorMessage("");
 		let resp;
 		try {
-			resp = await axios.post("/api/member/login", formData);
+			resp = await axios.post("/api/member/login", formData, {withCredentials: true});
 		} catch (e) {
 			setErrorMessage(normalizeError(e));
 			return;

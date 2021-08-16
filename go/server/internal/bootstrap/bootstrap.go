@@ -90,6 +90,9 @@ func InitAndListen() (*Bootstrap, error) {
 		AllowedOrigins: []string{"http://localhost:9000"},
 		AllowedMethods: []string{"GET", "POST", "PUT"},
 		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+		// NOTE(jae): 2021-08-12
+		// AllowCredentials must be true if we're going to allow setting a HttpOnly cookie for JWT tokens
+		AllowCredentials: true,
 	})
 	httpServer.Handler = corsMiddleware.Handler(httpServer.Handler)
 

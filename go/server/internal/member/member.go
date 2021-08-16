@@ -3,6 +3,7 @@ package member
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/mail"
@@ -138,14 +139,30 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(&memberLoginResponse{
-		AccessToken: tokenString,
-	}); err != nil {
-		http.Error(w, "Account exists but has an invalid password type", http.StatusInternalServerError)
-		return
-	}
+	http.SetCookie(w, &http.Cookie{
+		Name:  "Authorization",
+		Value: "Bearer " + tokenString,
+		Path:  "/",
+		// note(jae): 2021-08-16
+		// - HttpOnly, only accessible via browser requests. JavaScript cannot read it
+		// - SameSite
+		// - Secure
+		//
+		// These three properties are recommended as best practice for JWT tokens.
+		// The key reason being that if you store this token in LocalStorage/SessionStorage, it could be stolen
+		// by client-side JS code.
+		//
+		// See here if you're curious: https://blog.logrocket.com/jwt-authentication-best-practices
+		// Mirror: https://web.archive.org/web/20210816043710/https://blog.logrocket.com/jwt-authentication-best-practices/
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		// todo(jae): 2021-08-16
+		// This should be true for non-development builds
+		Secure: true,
+	})
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "Login successful")
 }
 
 type memberRegistrationRequest struct {
