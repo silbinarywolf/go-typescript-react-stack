@@ -1,8 +1,8 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import React, { useState } from "react";
-import localforage from "localforage";
-import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
 
+import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
+import { useMember } from "~/member/useMember/useMember";
 import { Button } from "~/ui/Button/Button";
 import { Container } from "~/ui/Container/Container";
 import { normalizeError } from "~/util/Fetch";
@@ -13,6 +13,7 @@ interface LoginFormValues {
 }
 
 export default function MemberLoginPage(): JSX.Element {
+	const { setIsLoggedIn } = useMember();
 	const [formData, setFormData] = useState<LoginFormValues>({
 		Email: "",
 		Password: "",
@@ -31,14 +32,15 @@ export default function MemberLoginPage(): JSX.Element {
 			resp = await axios.post("/api/member/login", formData, {withCredentials: true});
 		} catch (err) {
 			if (err && err.response && err.response.status === 401) {
-				await localforage.removeItem("isLoggedIn");
+				// If unauthorized, ensure user is logged out
+				await setIsLoggedIn(false);
 			}
 			setErrorMessage(normalizeError(err));
 			return;
 		} finally {
 			setIsFormSubmitting(false);
 		}
-		await localforage.setItem("isLoggedIn", true);
+		await setIsLoggedIn(true);
 		setErrorMessage(resp.data);
 	}
 
