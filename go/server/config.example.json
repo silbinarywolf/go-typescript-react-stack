@@ -6,6 +6,6 @@
         }
     },
     "Database": {
-        "URL": "postgres://postgres:password@localhost:5432/handprint?sslmode=disable"
+        "URL": "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"
     }
 }
