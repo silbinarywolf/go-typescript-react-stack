@@ -1,8 +1,11 @@
 package identity
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"crypto/rand"
@@ -20,7 +23,9 @@ type Claims struct {
 // a key using crypto/rand or something equivalent. You need the same key for signing
 // and validating.
 //
-// generateHMACSecret function below can be used to generate a new key
+// NOTE: Replacing this secret will invalidate all current login sessions
+//
+// generateHMACSecret function below can be used to generate a new key.
 var hmacSecret []byte = []byte{233, 147, 76, 228, 98, 238, 140, 249, 35, 177, 49, 225, 87, 208, 88, 111, 207, 64, 210, 33, 46, 7, 240, 199, 72, 132, 61, 210, 198, 53, 254, 31}
 
 // expiresInTime is in how many seconds a JWT will expire
@@ -97,7 +102,34 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("unexpected claim type: %T", token.Claims)
 	}
 	if !token.Valid {
-		return nil, err
+		return nil, errors.New("token is invalid")
 	}
 	return claims, nil
+}
+
+// AuthorizedHandler requires a user be logged-in for the request to work
+func AuthorizedHandler(endpoint func(*Claims, http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("Authorization")
+		if err == http.ErrNoCookie {
+			http.Error(w, `missing "Authorization" cookie`, http.StatusUnauthorized)
+			return
+		}
+		token := cookie.Value
+		if token == "" {
+			http.Error(w, `invalid "Authorization" cookie, cannot be empty`, http.StatusBadRequest)
+			return
+		}
+		if !strings.HasPrefix(token, "Bearer ") {
+			http.Error(w, `invalid "Authorization" cookie, missing "Bearer " prefix`, http.StatusBadRequest)
+			return
+		}
+		token = token[len("Bearer "):]
+		claims, err := ValidateJWT(token)
+		if err != nil {
+			http.Error(w, "invalid JWT", http.StatusUnauthorized)
+			return
+		}
+		endpoint(claims, w, r)
+	})
 }

@@ -41,6 +41,7 @@ func New(db *sqlw.DB) (*MemberModule, error) {
 	// Setup routes
 	http.HandleFunc(modulePath+"/login", module.handleLogin)
 	http.HandleFunc(modulePath+"/register", module.handleRegister)
+	http.HandleFunc(modulePath+"/menu", identity.AuthorizedHandler(module.handleMenu))
 
 	return module, nil
 }
@@ -288,4 +289,8 @@ type MemberRegister struct {
 	Member
 	Password     string `db:"Password"`
 	PasswordType string `db:"PasswordType"`
+}
+
+func (m *MemberModule) handleMenu(claims *identity.Claims, w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "TODO(jae): add menu endpoint", http.StatusBadRequest)
 }

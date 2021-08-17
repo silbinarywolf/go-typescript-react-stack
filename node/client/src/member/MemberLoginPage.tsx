@@ -37,9 +37,21 @@ export default function MemberLoginPage(): JSX.Element {
 		setErrorMessage(resp.data)
 	}
 
+	async function onNavSubmit(e: React.MouseEvent<HTMLButtonElement>) {
+		let resp;
+		try {
+			resp = await axios.post("/api/member/menu", formData, {withCredentials: true});
+		} catch (e) {
+			setErrorMessage(normalizeError(e));
+			return;
+		} finally {
+			setIsFormSubmitting(false);
+		}
+	}
+
 	return (
 		<Container>
-			<h1>Register page</h1>
+			<h1>Login page</h1>
 			<form onSubmit={onFormSubmit}>
 				{errorMessage !== "" && 
                     <div>
@@ -91,6 +103,11 @@ export default function MemberLoginPage(): JSX.Element {
 					type="submit"
 					disabled={isFormSubmitting}
 					data-testid="loginButton"
+				/>
+				<Button
+					label="Test Nav Load"
+					data-testid="navButton"
+					onClick={onNavSubmit}
 				/>
 			</form>
 		</Container>
