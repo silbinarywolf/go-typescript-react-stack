@@ -25,6 +25,7 @@
 		"eslint": "^7.31.0",
 		"eslint-plugin-react": "^7.24.0",
 		"html-webpack-plugin": "^5.3.2",
+		"localforage": "^1.9.0",
 		"mini-css-extract-plugin": "^2.1.0",
 		"postcss": "^8.3.5",
 		"postcss-import": "^14.0.2",

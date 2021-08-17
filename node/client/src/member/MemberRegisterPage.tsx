@@ -34,7 +34,7 @@ export default function MemberRegisterPage(): JSX.Element {
 		} finally {
 			setIsFormSubmitting(false);
 		}
-		setErrorMessage(resp.data)
+		setErrorMessage(resp.data);
 	}
 
 	return (

@@ -112,7 +112,7 @@ func AuthorizedHandler(endpoint func(*Claims, http.ResponseWriter, *http.Request
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("Authorization")
 		if err == http.ErrNoCookie {
-			http.Error(w, `missing "Authorization" cookie`, http.StatusUnauthorized)
+			http.Error(w, `missing "Authorization" cookie`, http.StatusBadRequest)
 			return
 		}
 		token := cookie.Value

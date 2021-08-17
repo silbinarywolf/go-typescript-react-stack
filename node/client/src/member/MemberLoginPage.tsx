@@ -1,5 +1,6 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import React, { useState } from "react";
+import localforage from "localforage";
 import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
 
 import { Button } from "~/ui/Button/Button";
@@ -28,21 +29,25 @@ export default function MemberLoginPage(): JSX.Element {
 		let resp;
 		try {
 			resp = await axios.post("/api/member/login", formData, {withCredentials: true});
-		} catch (e) {
-			setErrorMessage(normalizeError(e));
+		} catch (err) {
+			if (err && err.response && err.response.status === 401) {
+				await localforage.removeItem("isLoggedIn");
+			}
+			setErrorMessage(normalizeError(err));
 			return;
 		} finally {
 			setIsFormSubmitting(false);
 		}
-		setErrorMessage(resp.data)
+		await localforage.setItem("isLoggedIn", true);
+		setErrorMessage(resp.data);
 	}
 
 	async function onNavSubmit(e: React.MouseEvent<HTMLButtonElement>) {
 		let resp;
 		try {
 			resp = await axios.post("/api/member/menu", formData, {withCredentials: true});
-		} catch (e) {
-			setErrorMessage(normalizeError(e));
+		} catch (err) {
+			setErrorMessage(normalizeError(err));
 			return;
 		} finally {
 			setIsFormSubmitting(false);
