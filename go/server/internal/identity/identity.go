@@ -130,6 +130,10 @@ func AuthorizedHandler(endpoint func(*Claims, http.ResponseWriter, *http.Request
 			http.Error(w, "invalid JWT", http.StatusUnauthorized)
 			return
 		}
+		if claims.Email == "" {
+			http.Error(w, "unexpected error, JWT missing Email", http.StatusInternalServerError)
+			return
+		}
 		endpoint(claims, w, r)
 	})
 }

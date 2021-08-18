@@ -11,7 +11,7 @@ interface RegisterFormValues {
     Password: string;
 }
 
-export default function MemberRegisterPage(): JSX.Element {
+export default function RegisterPage(): JSX.Element {
 	const [formData, setFormData] = useState<RegisterFormValues>({
 		Email: "",
 		Password: "",

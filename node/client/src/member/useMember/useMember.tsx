@@ -17,10 +17,10 @@ interface MemberContextProps {
 }
 
 interface MemberProviderProps {
-    children: JSX.Element;
+    children?: React.ReactNode;
 }
 
-export function MemberProvider({children}: MemberProviderProps) {
+export function MemberProvider({children}: MemberProviderProps): JSX.Element {
 	const [isLoggedIn, _setIsLoggedIn] = useState<boolean>(false);
 
 	async function setIsLoggedIn(value: boolean): Promise<void> {

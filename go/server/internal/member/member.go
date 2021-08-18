@@ -41,9 +41,21 @@ func New(db *sqlw.DB) (*MemberModule, error) {
 	// Setup routes
 	http.HandleFunc(modulePath+"/login", module.handleLogin)
 	http.HandleFunc(modulePath+"/register", module.handleRegister)
-	http.HandleFunc(modulePath+"/menu", identity.AuthorizedHandler(module.handleMenu))
+	http.HandleFunc(modulePath+"/me", identity.AuthorizedHandler(module.handleMe))
 
 	return module, nil
+}
+
+type Member struct {
+	Email     string `db:"Email"`
+	FirstName string `db:"FirstName"`
+	LastName  string `db:"LastName"`
+}
+
+type MemberRegister struct {
+	Member
+	Password     string `db:"Password"`
+	PasswordType string `db:"PasswordType"`
 }
 
 type memberLoginRequest struct {
@@ -100,7 +112,7 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		var memberList []MemberRegister
 		if err := stmt.SelectContext(
-			context.Background(),
+			r.Context(),
 			&memberList,
 			map[string]interface{}{
 				"Email": req.Email,
@@ -279,18 +291,34 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Successfully registered", http.StatusOK)
 }
 
-type Member struct {
-	Email     string `db:"Email"`
-	FirstName string `db:"FirstName"`
-	LastName  string `db:"LastName"`
+type memberMeResponse struct {
+	// Profile will return member profile data
+	Profile memberMeProfile `json:"Profile"`
+	// note(jae): 2021-08-18
+	// I suspect in the future we may need a "Config" property that returns
+	// certain feature flags of the application for logged-in users.
+	// Whether this is just a bag of stuff or not remains to be seen but I thought
+	// it was worth documenting why we don't just have the "Profile" information embedded
+	// directly here
+	// Config configflags.Config `json:"Config"`
 }
 
-type MemberRegister struct {
-	Member
-	Password     string `db:"Password"`
-	PasswordType string `db:"PasswordType"`
+type memberMeProfile struct {
+	// todo(jae): 2021-08-18
+	// stubbed for later, we can return some information about
+	// the logged-in user here
+
+	// Email is the email address of the current profile
+	Email string `json:"Email"`
 }
 
-func (m *MemberModule) handleMenu(claims *identity.Claims, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "TODO(jae): add menu endpoint", http.StatusBadRequest)
+func (m *MemberModule) handleMe(claims *identity.Claims, w http.ResponseWriter, r *http.Request) {
+	var resp memberMeResponse
+	resp.Profile.Email = claims.Email
+	if err := json.NewEncoder(w).Encode(&resp); err != nil {
+		http.Error(w, "unexpected error with encoding", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
 }

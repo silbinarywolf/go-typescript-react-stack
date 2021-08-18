@@ -5,7 +5,7 @@ import styles from "./FieldHolder.module.css";
 interface FieldHolderProps {
     label: string;
     id: string;
-    children?: JSX.Element
+    children?: React.ReactNode
 }
 
 export function FieldHolder(props: FieldHolderProps): JSX.Element {

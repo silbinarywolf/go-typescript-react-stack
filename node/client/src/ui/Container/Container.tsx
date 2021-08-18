@@ -3,7 +3,7 @@ import React, { Children } from "react";
 import styles from "./Container.module.css";
 
 interface ContainerProps {
-	children: JSX.Element | JSX.Element[] | string | string[];
+	children: React.ReactNode;
 }
 
 export function Container(props: ContainerProps): JSX.Element {

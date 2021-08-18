@@ -1,23 +1,11 @@
 import React from "react";
-import {
-	Route,
-	Redirect,
-	Switch,
-	Router,
-} from "react-router-dom";
-import { createHashHistory } from "history";
 
-import LoadingPage from "~/core/App/LoadingPage";
+import Main from "~/core/Main/Main";
 import { ErrorBoundary } from "~/ui/ErrorBoundary/ErrorBoundary";
 import { MemberProvider } from "~/member/useMember/useMember";
 
-const history = createHashHistory();
-
-const MemberLoginPage = React.lazy(() => import("~/member/MemberLoginPage/MemberLoginPage"));
-const MemberRegisterPage = React.lazy(() => import("~/member/MemberRegisterPage/MemberRegisterPage"));
-
 interface GlobalProvidersProps {
-	children: JSX.Element
+	children?: React.ReactNode;
 }
 
 // GlobalProviders are were all providers that need to be accessed across the entire application
@@ -38,37 +26,13 @@ export default function App(): JSX.Element {
 	return (
 		<ErrorBoundary>
 			<GlobalProviders>
-				<Router
-					history={history}
-				>
-					<React.Suspense 
-						fallback={<LoadingPage/>}
-					>
-						<Switch>
-							<Route
-								key="/"
-								path="/"
-								exact
-							>
-								<Redirect to={"/login"} />
-							</Route>
-							<Route
-								path={"/login"}
-								component={MemberLoginPage}
-								exact
-							/>
-							<Route
-								path={"/register"}
-								component={MemberRegisterPage}
-								exact
-							/>
-							{/* <Route
-								component={fallbackRoute.component}
-								params={fallbackRoute.params}
-							/> */}
-						</Switch>
-					</React.Suspense>
-				</Router>
+				{
+				// note(jae): 2021-08-18
+				// The reasoning for having a seperate "Main" component is so that
+				// it has access to any global state providers and if it has an error, it's caught
+				// by the error boundary
+				}
+				<Main/>
 			</GlobalProviders>
 		</ErrorBoundary>
 	);

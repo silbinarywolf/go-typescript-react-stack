@@ -2,6 +2,20 @@ import { useState, useEffect } from "react";
 import axios, { AxiosError } from "axios";
 
 /**
+ * errorToStatusCode will take an Error object and give back the status code if it has one.
+ * If it does not have a status code, it will return 0.
+ */
+export function errorToStatusCode(err: AxiosError): number {
+	if (err &&
+        err.response &&
+        err.response.status &&
+        typeof err.response.status === "number") {
+		return err.response.status;
+	}
+	return 0;
+}
+
+/**
  * normalizeError will take an Error object and normalize it into a readable string.
  */
 export function normalizeError(err: (AxiosError & Error) | string): string {
