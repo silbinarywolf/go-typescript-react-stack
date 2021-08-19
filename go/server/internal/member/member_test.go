@@ -59,13 +59,15 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestRegisterAndLogin(t *testing.T) {
-	t.Run("register: Create account successfully", func(t *testing.T) {
+func TestRegisterAndLogin_Both(t *testing.T) {
+	email := "register_good_integration_test@test.com"
+
+	t.Run("register: happy: Create account successfully", func(t *testing.T) {
 		// create body for POST request
 		var body io.Reader
 		{
 			var reqRecord memberRegistrationRequest
-			reqRecord.Email = "register_good_integration_test@test.com"
+			reqRecord.Email = email
 			reqRecord.Password = "test1234"
 			byteData, err := json.Marshal(&reqRecord)
 			if err != nil {
@@ -89,12 +91,12 @@ func TestRegisterAndLogin(t *testing.T) {
 		}
 	})
 
-	t.Run("register: Check that account is taken", func(t *testing.T) {
+	t.Run("register: sad: Check that account is taken", func(t *testing.T) {
 		// create body for POST request
 		var body io.Reader
 		{
 			var reqRecord memberRegistrationRequest
-			reqRecord.Email = "register_good_integration_test@test.com"
+			reqRecord.Email = email
 			reqRecord.Password = "test1234"
 			byteData, err := json.Marshal(&reqRecord)
 			if err != nil {
@@ -118,12 +120,16 @@ func TestRegisterAndLogin(t *testing.T) {
 		}
 	})
 
-	t.Run("login: Check that account can be logged into", func(t *testing.T) {
+	// authCookies is set by the test below and used by another test to determine if
+	// the happy path works
+	authCookies := ""
+
+	t.Run("login: happy: Check that account can be logged into", func(t *testing.T) {
 		// create body for POST request
 		var body io.Reader
 		{
 			var reqRecord memberLoginRequest
-			reqRecord.Email = "register_good_integration_test@test.com"
+			reqRecord.Email = email
 			reqRecord.Password = "test1234"
 			byteData, err := json.Marshal(&reqRecord)
 			if err != nil {
@@ -153,6 +159,13 @@ func TestRegisterAndLogin(t *testing.T) {
 			t.Errorf("returned wrong status code.\ngot: %v\nwant %v", rec.Code, expected)
 		}
 
+		// Check it returns what we expect in the HTTP body
+		got := strings.TrimSpace(rec.Body.String())
+		expected := `Login successful`
+		if got != expected {
+			t.Errorf("returned unexpected body.\ngot: %v\nwant %v", got, expected)
+		}
+
 		// Check if the "Authorization" cookie was set
 		{
 			hasAuthorizationCookie := false
@@ -173,19 +186,109 @@ func TestRegisterAndLogin(t *testing.T) {
 			if !hasAuthorizationCookie {
 				t.Errorf(`"Authorization" cookie was expected but not found`)
 			}
+			authCookies = rec.Result().Header.Get("Set-Cookie")
+		}
+	})
+
+	t.Run("me: happy: get account profile", func(t *testing.T) {
+		if authCookies == "" {
+			t.Fatalf("authCookies should be set from previous test and not empty")
 		}
 
-		// Check it returns what we expect in the HTTP body
-		got := strings.TrimSpace(rec.Body.String())
-		expected := `Login successful`
-		if got != expected {
-			t.Errorf("returned unexpected body.\ngot: %v\nwant %v", got, expected)
+		var rec *httptest.ResponseRecorder
+		{
+			// create request, setup recorder, then fire request at endpoint
+			url := modulePath + "/me"
+			req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
+			if err != nil {
+				t.Fatalf(`failed to create request: %s`, err)
+			}
+			req.Header.Set("Cookie", authCookies)
+			h, pattern := http.DefaultServeMux.Handler(req)
+			if pattern == "" {
+				t.Fatalf("failed to find route: %s\nHas the route been registered? (This occurs during module initialization)", url)
+			}
+			rec = httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+		}
+
+		// Check status code matches
+		if expected := http.StatusOK; rec.Code != expected {
+			t.Fatalf("returned wrong status code.\ngot: %v\nwant %v", rec.Code, expected)
+		}
+
+		var resp memberMeResponse
+		{
+			dec := json.NewDecoder(rec.Body)
+			dec.DisallowUnknownFields()
+			if err := dec.Decode(&resp); err != nil {
+				t.Errorf("json decode error for /me: %s", err)
+			}
+		}
+
+		if resp.Profile.Email != email {
+			t.Errorf("returned wrong status code.\ngot: %v\nwant %v", resp.Profile.Email, email)
 		}
 	})
 }
 
-func TestLogin_Sad_EmptyUsername(t *testing.T) {
+func TestMe_Sad_NoLoginCookie(t *testing.T) {
+	var rec *httptest.ResponseRecorder
+	{
+		// create request, setup recorder, then fire request at endpoint
+		url := modulePath + "/me"
+		req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
+		if err != nil {
+			t.Fatalf(`failed to create request: %s`, err)
+		}
+		h, pattern := http.DefaultServeMux.Handler(req)
+		if pattern == "" {
+			t.Fatalf("failed to find route: %s\nHas the route been registered? (This occurs during module initialization)", url)
+		}
+		rec = httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+	}
 
+	// Check status code matches
+	if expected := http.StatusBadRequest; rec.Code != expected {
+		t.Fatalf("returned wrong status code.\ngot: %v\nwant %v", rec.Code, expected)
+	}
+}
+
+func TestLogin_Sad_InvalidUsername(t *testing.T) {
+	// create body for POST request
+	var body io.Reader
+	{
+		var reqRecord memberLoginRequest
+		reqRecord.Email = "register_good_integration_test@test.com"
+		reqRecord.Password = "test1234"
+		byteData, err := json.Marshal(&reqRecord)
+		if err != nil {
+			t.Fatalf(`failed to marshal JSON body: %s`, err)
+		}
+		body = bytes.NewReader(byteData)
+	}
+
+	var rec *httptest.ResponseRecorder
+	{
+		// create request, setup recorder, then fire request at endpoint
+		url := modulePath + "/login"
+		req, err := http.NewRequestWithContext(context.Background(), "POST", url, body)
+		if err != nil {
+			t.Fatalf(`failed to create request: %s`, err)
+		}
+		h, pattern := http.DefaultServeMux.Handler(req)
+		if pattern == "" {
+			t.Fatalf("failed to find route: %s\nHas the route been registered? (This occurs during module initialization)", url)
+		}
+		rec = httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+	}
+
+	// Check status code matches
+	if expected := http.StatusOK; rec.Code != expected {
+		t.Errorf("returned wrong status code.\ngot: %v\nwant %v", rec.Code, expected)
+	}
 }
 
 func TestRegister_Sad_EmptyUsername(t *testing.T) {
@@ -254,7 +357,7 @@ func TestRegister_Sad_InvalidEmail(t *testing.T) {
 	}
 }
 
-func TestLogin_Good_ValidEmail(t *testing.T) {
+func TestLogin_Happy_ValidEmail(t *testing.T) {
 	// create body for POST request
 	var body io.Reader
 	{
