@@ -84,10 +84,7 @@ func InitAndListen() (*Bootstrap, error) {
 
 	// Apply Cross-Origin Resource Sharing
 	corsMiddleware := cors.New(cors.Options{
-		// TODO(jae): 2021-08-12
-		// change this to be configurable, we don't want to allow requests
-		// from localhost:9000 for production
-		AllowedOrigins: []string{"http://localhost:9000"},
+		AllowedOrigins: config.WebServer.CORS.AllowedOrigins,
 		AllowedMethods: []string{"GET", "POST", "PUT"},
 		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		// NOTE(jae): 2021-08-12

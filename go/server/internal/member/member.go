@@ -169,9 +169,7 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 		// Mirror: https://web.archive.org/web/20210816043710/https://blog.logrocket.com/jwt-authentication-best-practices/
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		// todo(jae): 2021-08-16
-		// This should be true for non-development builds
-		Secure: true,
+		Secure:   true,
 	})
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
