@@ -1,4 +1,4 @@
-package identity
+package auth
 
 import (
 	"errors"
@@ -13,8 +13,13 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// Claims
-type Claims struct {
+// Member holds data that is exposed to authenticated requests
+type Member struct {
+	Email string
+}
+
+// claims are what we store in the JWT token
+type claims struct {
 	Email string `json:"email"`
 	jwt.StandardClaims
 }
@@ -56,10 +61,11 @@ func generateHMACSecret() string {
 	return output
 }
 
+// GenerateJWT will create a new JWT token for a user
 func GenerateJWT(email string, now time.Time) (string, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims{
 		Email: email,
 		StandardClaims: jwt.StandardClaims{
 			// ExpiresAt maps to "exp" in the JWT spec
@@ -86,8 +92,8 @@ func GenerateJWT(email string, now time.Time) (string, error) {
 	return tokenString, nil
 }
 
-func ValidateJWT(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+func validateJWT(tokenString string) (*claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -97,7 +103,7 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 	if err != nil {
 		return nil, err
 	}
-	claims, ok := token.Claims.(*Claims)
+	claims, ok := token.Claims.(*claims)
 	if !ok {
 		return nil, fmt.Errorf("unexpected claim type: %T", token.Claims)
 	}
@@ -108,7 +114,7 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 }
 
 // AuthorizedHandler requires a user be logged-in for the request to work
-func AuthorizedHandler(endpoint func(*Claims, http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func AuthorizedHandler(endpoint func(*Member, http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("Authorization")
 		if err == http.ErrNoCookie {
@@ -125,7 +131,7 @@ func AuthorizedHandler(endpoint func(*Claims, http.ResponseWriter, *http.Request
 			return
 		}
 		token = token[len("Bearer "):]
-		claims, err := ValidateJWT(token)
+		claims, err := validateJWT(token)
 		if err != nil {
 			http.Error(w, "invalid JWT", http.StatusUnauthorized)
 			return
@@ -134,6 +140,9 @@ func AuthorizedHandler(endpoint func(*Claims, http.ResponseWriter, *http.Request
 			http.Error(w, "unexpected error, JWT missing Email", http.StatusInternalServerError)
 			return
 		}
-		endpoint(claims, w, r)
+		member := &Member{
+			Email: claims.Email,
+		}
+		endpoint(member, w, r)
 	})
 }

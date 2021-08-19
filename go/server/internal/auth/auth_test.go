@@ -1,4 +1,4 @@
-package identity
+package auth
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ func TestGenValid_Good_EmailNow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to generate JWT, got unexpected error: %s", err)
 	}
-	if _, err := ValidateJWT(token); err != nil {
+	if _, err := validateJWT(token); err != nil {
 		t.Fatalf("unable to validate after generating JWT, got unexpected error: %s", err)
 	}
 }
@@ -26,7 +26,7 @@ func TestGenValid_Bad_FutureToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to generate JWT, got unexpected error: %s", err)
 	}
-	_, err = ValidateJWT(token)
+	_, err = validateJWT(token)
 	if err == nil {
 		t.Fatalf("expected a validation error from JWT, but got no error")
 	}
@@ -59,7 +59,7 @@ func TestGenValid_Bad_ExpiredToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to generate JWT, got unexpected error: %s", err)
 	}
-	_, err = ValidateJWT(token)
+	_, err = validateJWT(token)
 	if err == nil {
 		t.Fatalf("expected a validation error from JWT, but got no error")
 	}

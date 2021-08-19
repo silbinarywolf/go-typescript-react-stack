@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/identity"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/auth"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlutil"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
 	"golang.org/x/crypto/bcrypt"
@@ -41,7 +41,7 @@ func New(db *sqlw.DB) (*MemberModule, error) {
 	// Setup routes
 	http.HandleFunc(modulePath+"/login", module.handleLogin)
 	http.HandleFunc(modulePath+"/register", module.handleRegister)
-	http.HandleFunc(modulePath+"/me", identity.AuthorizedHandler(module.handleMe))
+	http.HandleFunc(modulePath+"/me", auth.AuthorizedHandler(module.handleMe))
 
 	return module, nil
 }
@@ -146,7 +146,7 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate token
-	tokenString, err := identity.GenerateJWT(member.Email, time.Now())
+	tokenString, err := auth.GenerateJWT(member.Email, time.Now())
 	if err != nil {
 		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
 		return
@@ -239,14 +239,14 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 	{
 		// note(jae): 2021-08-13
 		//
-		// I chose a value of "16". At the time of writing this operation takes ~3 seconds in my machine
+		// I experimented with a value of "16". At the time of writing this operation takes ~3 seconds in my machine
 		// (AMD Ryzen 5 3600 6-Core Processor, ~3.6 GHZ)
 		//
 		// Notes about the "cost" parameter are here:
 		// https://security.stackexchange.com/questions/17207/recommended-of-rounds-for-bcrypt/83382#83382
 		//
 		// tldr: bigger = slower to process, which in turn means it'd take longer to crack
-		const bcryptCost = 16
+		const bcryptCost = 13
 
 		// note(jae): 2021-08-13
 		// Go's bcrypt implementation does salting as well
@@ -288,7 +288,9 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Error(w, "Successfully registered", http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "Successfully registered")
 }
 
 type memberMeResponse struct {
@@ -312,7 +314,7 @@ type memberMeProfile struct {
 	Email string `json:"Email"`
 }
 
-func (m *MemberModule) handleMe(claims *identity.Claims, w http.ResponseWriter, r *http.Request) {
+func (m *MemberModule) handleMe(claims *auth.Member, w http.ResponseWriter, r *http.Request) {
 	var resp memberMeResponse
 	resp.Profile.Email = claims.Email
 
