@@ -11,7 +11,8 @@ import LoadingPage from "~/core/LoadingPage/LoadingPage";
 import { useMember } from "~/member/useMember/useMember";
 import axios from "axios";
 import { errorToStatusCode } from "~/util/Fetch";
-import Error404Page from "../Error404Page/Error404Page";
+import Error404Page from "~/core/Error404Page/Error404Page";
+import { AuthRoute } from "~/member/AuthRoute/AuthRoute";
 
 const history = createHashHistory();
 
@@ -36,18 +37,18 @@ export default function App(): JSX.Element {
 			} catch (err) {
 				if (errorToStatusCode(err) === 401) {
 					setIsLoggedIn(false);
-					setIsLoading(false);
 					return;
 				}
 				// todo(Jae): 2021-08-18
 				// add generic error handling
 				return;
+			} finally {
+				setIsLoading(false);
 			}
 			// If no error occurred, then we are logged in
 			setIsLoggedIn(true);
-			setIsLoading(false);
 		}
-		if (!isLoggedIn) {
+		if (isLoggedIn) {
 			// If already logged in, avoid firing request
 			setIsLoading(false);
 			return;
@@ -68,26 +69,13 @@ export default function App(): JSX.Element {
                 		fallback={<LoadingPage/>}
                 	>
                 		<Switch>
-                			{(isLoggedIn === true) &&
-                                <React.Fragment>
-                                	<Route
-                                		key="/"
-                                		path="/"
-                                		exact
-                                	>
-                                		<Redirect to={"/dashboard"} />
-                                	</Route>
-                                </React.Fragment>
-                			}
-                			{(isLoggedIn === false) &&
-                                <Route
-                                	key="/"
-                                	path="/"
-                                	exact
-                                >
-                                	<Redirect to={"/login"} />
-                                </Route>
-                			}
+                			<Route
+                				key="/"
+                				path="/"
+                				exact
+                			>
+                				<Redirect to={isLoggedIn ? "/dashboard" : "/login"} />
+                			</Route>
                 			<Route
                 				path={"/login"}
                 				component={LoginPage}
@@ -98,7 +86,7 @@ export default function App(): JSX.Element {
                 				component={RegisterPage}
                 				exact
                 			/>
-                			<Route
+                			<AuthRoute
                 				path={"/dashboard"}
                 				component={DashboardPage}
                 				exact

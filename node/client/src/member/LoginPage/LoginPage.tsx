@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useState } from "react";
+import { useHistory, useParams } from "react-router-dom";
 
 import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
 import { useMember } from "~/member/useMember/useMember";
@@ -12,7 +13,31 @@ interface LoginFormValues {
     Password: string;
 }
 
+/**
+ * getSearchParams extracts parameters after the ? in the URL.
+ * 
+ * We use our own implementation to have stronger browser support and to support
+ * hash-style URLs, ie. "localhost:8080/#/home?myparam=1"
+ */
+function getSearchParams(queryString: string): {[key: string]: string | undefined} {
+	const params: {[key: string]: string} = {};
+	queryString = queryString.replace(/.*?\?/,"");
+	if (queryString.length > 0) {
+		const keyValPairs = queryString.split("&");
+		for (let pairNum in keyValPairs) {
+			const keyAndValue = keyValPairs[pairNum].split("=");
+			const key = keyAndValue[0];
+			if (!key.length) {
+				continue;
+			}
+			params[key] = decodeURIComponent(keyAndValue[1]);
+		}
+	}
+	return params;
+}
+
 export default function LoginPage(): JSX.Element {
+	const history = useHistory();
 	const { isLoggedIn, setIsLoggedIn } = useMember();
 	const [formData, setFormData] = useState<LoginFormValues>({
 		Email: "",
@@ -42,13 +67,30 @@ export default function LoginPage(): JSX.Element {
 		}
 		await setIsLoggedIn(true);
 		setErrorMessage(resp.data);
+
+		// Handle redirecting the user after login
+		const searchParams = getSearchParams(history.location.search);
+		if (searchParams && searchParams.back_url) {
+			// Go to expected URL
+			//
+			// note(jae): 2021-08-19
+			// I've tested putting an outside URL in the "back_url" and the react-router-dom
+			// library seems to keep URL navigation local to the current website, so this
+			// can't be abused.
+			// - input:  http://localhost:9000/#/login?back_url=www.google.com/dashboard
+			// - output: http://localhost:9000/#/www.google.com/dashboard
+			history.push(searchParams.back_url);
+		} else {
+			// Go to dashboard if no back URL
+			history.push("/dashboard");
+		}
 	}
 
 	return (
 		<Container>
 			<h1>Login page</h1>
 			{(isLoggedIn === true) &&
-				<p>You are aleady logged in.</p>
+				<p>You are already logged in.</p>
 			}
 			{(isLoggedIn === false) &&
 				<form onSubmit={onFormSubmit}>

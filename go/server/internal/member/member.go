@@ -315,10 +315,11 @@ type memberMeProfile struct {
 func (m *MemberModule) handleMe(claims *identity.Claims, w http.ResponseWriter, r *http.Request) {
 	var resp memberMeResponse
 	resp.Profile.Email = claims.Email
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
 		http.Error(w, "unexpected error with encoding", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
 }
