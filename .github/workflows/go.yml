@@ -4,6 +4,7 @@ jobs:
   linux:
       name: Ubuntu
       # This line is required to make Go see other containers, ie. postgres
+      # See: https://github.community/t/services-name-resolution-error/16716/5
       container: golang:1.17-buster
       runs-on: ubuntu-latest
       services:
@@ -34,6 +35,13 @@ jobs:
           uses: actions/setup-go@v2
           with:
             go-version: ${{ matrix.go }}
+
+        - name: Setup Database
+          env:
+            DATABASE_URL: "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"
+          run: |
+            go install github.com/amacneil/dbmate@v1.12.1
+            dbmate --no-dump-schema migrate
 
         - name: Backend Unit and Integration Tests
           env:
