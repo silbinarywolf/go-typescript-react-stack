@@ -31,7 +31,7 @@ type claims struct {
 // NOTE: Replacing this secret will invalidate all current login sessions
 //
 // generateHMACSecret function below can be used to generate a new key.
-var hmacSecret []byte = []byte{233, 147, 76, 228, 98, 238, 140, 249, 35, 177, 49, 225, 87, 208, 88, 111, 207, 64, 210, 33, 46, 7, 240, 199, 72, 132, 61, 210, 198, 53, 254, 31}
+var hmacSecret []byte = []byte{123, 223, 105, 19, 226, 32, 57, 149, 101, 36, 248, 157, 23, 171, 122, 157, 121, 93, 231, 151, 140, 231, 80, 9, 6, 250, 29, 252, 8, 94, 188, 58}
 
 // expiresInTime is in how many seconds a JWT will expire
 //
