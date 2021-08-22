@@ -1,5 +1,11 @@
 {
     "Webserver": {
-        "Port": 8080
+        "Port": 8080,
+        "CORS": {
+            "AllowedOrigins": ["http://localhost:9000"]
+        }
+    },
+    "Database": {
+        "URL": "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"
     }
 }

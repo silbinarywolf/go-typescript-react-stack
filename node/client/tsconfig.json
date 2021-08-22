@@ -8,8 +8,9 @@
 		"target": "es6",
 		"jsx": "react",
 		"sourceMap": true,
-		"module": "es2015",
+		"module": "esnext",
 		"moduleResolution": "node",
+		"noImplicitAny": true,
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true
 	},

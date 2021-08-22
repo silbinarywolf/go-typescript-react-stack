@@ -6,20 +6,22 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/examplemodule"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/member"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/staticfiles"
+
+	"github.com/rs/cors"
 )
 
 // Bootstrap contains information from starting up the application
 type Bootstrap struct {
+	db         *sqlw.DB
 	httpServer *http.Server
 	listener   net.Listener
-}
-
-type app struct {
-	fileMap map[string][]byte
 }
 
 // Serve calls the underlying Go implementation. Copy-pasted documentation below.
@@ -35,6 +37,9 @@ type app struct {
 // Serve always returns a non-nil error and closes l.
 // After Shutdown or Close, the returned error is ErrServerClosed.
 func (bs *Bootstrap) Serve() error {
+	// close connection to database if serving is cancelled / stopped
+	defer bs.db.Close()
+
 	log.Printf("serving on http://localhost%s/", bs.httpServer.Addr)
 
 	// todo(jae): 2021-07-20
@@ -58,10 +63,37 @@ func (bs *Bootstrap) Serve() error {
 func InitAndListen() (*Bootstrap, error) {
 	config, err := configuration.LoadConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
+		return nil, fmt.Errorf(`failed to load config: %w`, err)
 	}
 
-	// Serve asset files
+	// Connect to SQL server (postgres, as of 2021-08-13)
+	driverAndURL := strings.SplitN(config.Database.URL, "://", 2)
+	if len(driverAndURL) < 2 {
+		return nil, fmt.Errorf(`invalid database URL, expected Database.URL to be prefixed with something like "postgres://"`)
+	}
+	db, err := sqlw.Connect(driverAndURL[0], config.Database.URL)
+	if err != nil {
+		return nil, fmt.Errorf(`unable to connect to database: %w`, err)
+	}
+
+	// Setup CORS (Cross-Origin Resource Sharing) and http server
+	httpServer := &http.Server{
+		Addr:    ":" + strconv.Itoa(config.WebServer.Port),
+		Handler: http.DefaultServeMux,
+	}
+
+	// Apply Cross-Origin Resource Sharing
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins: config.WebServer.CORS.AllowedOrigins,
+		AllowedMethods: []string{"GET", "POST", "PUT"},
+		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+		// NOTE(jae): 2021-08-12
+		// AllowCredentials must be true if we're going to allow setting a HttpOnly cookie for JWT tokens
+		AllowCredentials: true,
+	})
+	httpServer.Handler = corsMiddleware.Handler(httpServer.Handler)
+
+	// Add serving static asset files to routes
 	if err := staticfiles.AddRoutes(); err != nil {
 		return nil, fmt.Errorf(`failed to setup serving ".js, .css" assets: %w`, err)
 	}
@@ -77,19 +109,18 @@ func InitAndListen() (*Bootstrap, error) {
 		if _, err := examplemodule.New(); err != nil {
 			return nil, fmt.Errorf(`failed to init module: %w`, err)
 		}
+		if _, err := member.New(db); err != nil {
+			return nil, fmt.Errorf(`failed to init module: %w`, err)
+		}
 	}
 
-	httpServer := &http.Server{
-		Addr: ":" + strconv.Itoa(config.WebServer.Port),
-		// note(jae): 2021-07-20
-		// if handler is set to nil, then Go will set it to "DefaultServeMux"
-		Handler: http.DefaultServeMux,
-	}
+	// Start listening for connections
 	ln, err := net.Listen("tcp", httpServer.Addr)
 	if err != nil {
 		return nil, err
 	}
 	bs := &Bootstrap{
+		db:         db,
 		httpServer: httpServer,
 		listener:   ln,
 	}

@@ -3,3 +3,8 @@
 	background: #333;
 	padding: 8px 16px;
 }
+
+.button[disabled] {
+	background: #666;
+	cursor: not-allowed;
+}

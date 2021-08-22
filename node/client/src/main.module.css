@@ -1,0 +1,27 @@
+/*
+ * This stylesheet contains global styling rules and should only be
+ * utilized in rare-cases where we need global styling.
+ *
+ * If you can make make something a React component with it's own discrete
+ * CSS module file, then you should use that.
+ *
+ * Some global use-cases are:
+ * - Set "box-sizing" globally
+ * - Set "body" or "#app" element styling or similar
+ * - Setting a "wyswyig" set of styles *assuming* we ever need to just render raw HTML from the backend.
+ *		(Arguably, this could be a WYSWIYG React component that contains all those styles)
+ */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	padding: 0;
+	margin: 0;
+}
+
+#app {
+	width: 100%;
+	height: 100%;
+}
