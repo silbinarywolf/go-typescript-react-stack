@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 	// For now, we just naively connect
 
 	// init db
-	db, err := sqlw.Connect("postgres", "postgres://postgres:"+os.Getenv("POSTGRES_PASSWORD")+"@"+os.Getenv("POSTGRES_HOST")+":"+os.Getenv("POSTGRES_PORT")+"/postgres?sslmode=disable")
+	db, err := sqlw.Connect("postgres", "")
 	if err != nil {
 		panic(fmt.Errorf(`unable to connect to database: %w`, err))
 	}
