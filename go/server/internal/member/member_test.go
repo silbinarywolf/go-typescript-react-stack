@@ -12,7 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/bootstrap"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 )
 
 var (
@@ -28,23 +29,29 @@ func TestMain(m *testing.M) {
 	//
 	// For now, we just naively connect
 
-	// init db
-	db, err := sqlw.Connect("postgres", "postgres://postgres:"+os.Getenv("POSTGRES_PASSWORD")+"@"+os.Getenv("POSTGRES_HOST")+":"+os.Getenv("POSTGRES_PORT")+"/postgres?sslmode=disable")
-	if err != nil {
-		panic(fmt.Errorf(`unable to connect to database: %w`, err))
-	}
+	// Initialize bootstrap and test module
+	{
+		bs, err := bootstrap.InitNoModules(&configuration.Config{
+			Database: configuration.DatabaseConfig{
+				URL: "postgres://postgres:" + os.Getenv("POSTGRES_PASSWORD") + "@" + os.Getenv("POSTGRES_HOST") + ":" + os.Getenv("POSTGRES_PORT") + "/postgres?sslmode=disable",
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
 
-	// initialize module once before running all tests.
-	// this includes adding routes like "/api/[MODULE]/call"
-	testModule, err = New(db)
-	if err != nil {
-		panic(fmt.Errorf(`failed to init module: %w`, err))
+		// initialize module once before running all tests.
+		// this includes adding routes like "/api/[MODULE]/call"
+		testModule, err = New(bs.DB())
+		if err != nil {
+			panic(fmt.Errorf(`failed to init module: %w`, err))
+		}
 	}
 
 	// Cleanup database
 	{
 		// Remove test data that could've be inserted previously
-		if _, err := db.NamedExecContext(
+		if _, err := testModule.db.NamedExecContext(
 			context.Background(),
 			`DELETE FROM "Member" WHERE "Email" = :Email`,
 			map[string]interface{}{

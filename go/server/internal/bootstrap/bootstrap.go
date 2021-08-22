@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -9,12 +10,15 @@ import (
 	"strings"
 
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
-	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/examplemodule"
-	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/member"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
-	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/staticfiles"
 
 	"github.com/rs/cors"
+)
+
+var (
+	// initModulesFunc is setup by an external module ("modules") and this is how we
+	// initialize modules outside of the bootstrap package
+	initModulesFunc func(bs *Bootstrap) error
 )
 
 // Bootstrap contains information from starting up the application
@@ -22,6 +26,10 @@ type Bootstrap struct {
 	db         *sqlw.DB
 	httpServer *http.Server
 	listener   net.Listener
+}
+
+func (bs *Bootstrap) DB() *sqlw.DB {
+	return bs.db
 }
 
 // Serve calls the underlying Go implementation. Copy-pasted documentation below.
@@ -52,7 +60,7 @@ func (bs *Bootstrap) Serve() error {
 	return nil
 }
 
-// InitAndListen will initialize the application. This will not start serving requests.
+// InitWithModulesAndListen will initialize the application. This will not start serving requests.
 //
 // note(jae): 2021-07-17
 // We don't just call ListenAndServe by design so that test code can accurately
@@ -60,12 +68,51 @@ func (bs *Bootstrap) Serve() error {
 //
 // If we don't do this, test code would need to wait an arbitrary amount of milliseconds before
 // trying to fire requests at the server and that can be flakey.
-func InitAndListen() (*Bootstrap, error) {
+func InitWithModulesAndListen() (*Bootstrap, error) {
+	if initModulesFunc == nil {
+		return nil, errors.New(`no modules callback registered. Must call RegisterInit before calling this. You may be missing a side-effect import to "(THIS_REPOSITORY)/go/server/internal/modules"`)
+	}
+
 	config, err := configuration.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf(`failed to load config: %w`, err)
 	}
 
+	// initialize bootstrap with no modules (yet... we do that below)
+	bs, err := InitNoModules(config)
+	if err != nil {
+		return nil, fmt.Errorf(`failed to initialize core: %w`, err)
+	}
+
+	// Apply Cross-Origin Resource Sharing
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins: config.WebServer.CORS.AllowedOrigins,
+		AllowedMethods: []string{"GET", "POST", "PUT"},
+		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+		// NOTE(jae): 2021-08-12
+		// AllowCredentials must be true if we're going to allow setting a HttpOnly cookie for JWT tokens
+		AllowCredentials: true,
+	})
+	bs.httpServer.Handler = corsMiddleware.Handler(bs.httpServer.Handler)
+
+	// Setup modules
+	//
+	// note(jae): 2021-08-22
+	// This function callback is setup by another Go package
+	// see: "(THIS_REPOSITORY)/go/server/internal/modules"
+	if err := initModulesFunc(bs); err != nil {
+		return nil, fmt.Errorf(`error initializing modules: %w`, err)
+	}
+
+	// Start listening for connections
+	bs.listener, err = net.Listen("tcp", bs.httpServer.Addr)
+	if err != nil {
+		return nil, err
+	}
+	return bs, nil
+}
+
+func InitNoModules(config *configuration.Config) (*Bootstrap, error) {
 	// Connect to SQL server (postgres, as of 2021-08-13)
 	driverAndURL := strings.SplitN(config.Database.URL, "://", 2)
 	if len(driverAndURL) < 2 {
@@ -82,47 +129,17 @@ func InitAndListen() (*Bootstrap, error) {
 		Handler: http.DefaultServeMux,
 	}
 
-	// Apply Cross-Origin Resource Sharing
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins: config.WebServer.CORS.AllowedOrigins,
-		AllowedMethods: []string{"GET", "POST", "PUT"},
-		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
-		// NOTE(jae): 2021-08-12
-		// AllowCredentials must be true if we're going to allow setting a HttpOnly cookie for JWT tokens
-		AllowCredentials: true,
-	})
-	httpServer.Handler = corsMiddleware.Handler(httpServer.Handler)
-
-	// Add serving static asset files to routes
-	if err := staticfiles.AddRoutes(); err != nil {
-		return nil, fmt.Errorf(`failed to setup serving ".js, .css" assets: %w`, err)
-	}
-
-	// Setup modules
-	//
-	// note(jae): 2021-07-20
-	// I have a hunch that we'll probably want to change this so modules
-	// "register" themselves and then all get initialized naively at this
-	// point in time. However we need to see what real use-cases come up first
-	// before doing that work.
-	{
-		if _, err := examplemodule.New(); err != nil {
-			return nil, fmt.Errorf(`failed to init module: %w`, err)
-		}
-		if _, err := member.New(db); err != nil {
-			return nil, fmt.Errorf(`failed to init module: %w`, err)
-		}
-	}
-
-	// Start listening for connections
-	ln, err := net.Listen("tcp", httpServer.Addr)
-	if err != nil {
-		return nil, err
-	}
 	bs := &Bootstrap{
 		db:         db,
 		httpServer: httpServer,
-		listener:   ln,
 	}
 	return bs, nil
+}
+
+// RegisterInit can only be called once and is used to describe the modules to initialize
+func RegisterInit(callback func(bs *Bootstrap) error) {
+	if initModulesFunc != nil {
+		panic("RegisterInit can only be called once")
+	}
+	initModulesFunc = callback
 }

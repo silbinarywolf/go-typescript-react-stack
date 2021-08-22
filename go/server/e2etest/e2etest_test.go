@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/bootstrap"
+	_ "github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/modules"
 )
 
 // testEndpoint is the server that Chrome tests against.
@@ -67,7 +69,7 @@ func TestMain(m *testing.M) {
 	}
 
 	// initiate server
-	bs, err := bootstrap.InitAndListen()
+	bs, err := bootstrap.InitWithModulesAndListen()
 	if err != nil {
 		panic(fmt.Errorf("%+w", err))
 	}
