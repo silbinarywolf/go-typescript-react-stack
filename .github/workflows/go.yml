@@ -5,15 +5,20 @@ jobs:
       name: Ubuntu
       runs-on: ubuntu-latest
       services:
+        # Label used to access the service container
         postgres:
           image: postgres
           env:
-            POSTGRES_PASSWORD: postgres
+            POSTGRES_PASSWORD: password
           options: >-
             --health-cmd pg_isready
             --health-interval 10s
             --health-timeout 5s
             --health-retries 5
+          ports:
+            # Maps tcp port 5432 on service container to the host
+            - 5432:5432
+
       strategy:
         matrix:
           go: ['1.17']
@@ -23,24 +28,15 @@ jobs:
         - name: Check out code
           uses: actions/checkout@v2
 
-        - name: Setup Node
-          uses: actions/setup-node@v2
-          with:
-            node-version: '14'
-
-        - name: Frontend React/TypeScript Build And Lint
-          run: |
-            cd node/client
-            npm install
-            npm run-script build
-            npm run-script lint
-
         - name: Setup Go
           uses: actions/setup-go@v2
           with:
             go-version: ${{ matrix.go }}
 
         - name: Backend Unit and Integration Tests
+          env:
+            POSTGRES_HOST: postgres
+            POSTGRES_PORT: 5432
           run: |
             cd go/server/internal
             go test -tags dev ./...
