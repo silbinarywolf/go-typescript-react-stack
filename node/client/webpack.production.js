@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 const webpack = require("webpack");
 const path = require("path");
 
@@ -38,7 +40,7 @@ module.exports = mergeWithRules({
 			// note(jae): 2021-07-18
 			// For MiniCssExtractPlugin to work, it needs to be prepended (first in the ".css" loaders)
 			test: "match",
-			use: "prepend"
+			use: "prepend",
 		},
 	},
 })(common, {
@@ -51,12 +53,22 @@ module.exports = mergeWithRules({
 				use: [
 					{
 						// note(jae): 2021-07-18
-            			// For production, we just want our styles pulled out into a CSS file
+						// For production, we just want our styles pulled out into a CSS file
 						loader: MiniCssExtractPlugin.loader,
 					},
-				]
+				],
 			},
-		]
+			{
+				test: /\.css$/,
+				use: [
+					{
+						// note(jae): 2021-07-18
+						// For production, we just want our styles pulled out into a CSS file
+						loader: MiniCssExtractPlugin.loader,
+					},
+				],
+			},
+		],
 	},
 	plugins: [
 		new MiniCssExtractPlugin({
@@ -65,7 +77,7 @@ module.exports = mergeWithRules({
 		}),
 		new webpack.DefinePlugin({
 			// note(jae): 2021-07-20
-			// These are global variables. 
+			// These are global variables.
 			// We add definitions to the "src/custom.d.ts" file so that TypeScript can see them.
 			API_ENDPOINT: JSON.stringify(":8080"),
 			VERSION: JSON.stringify("1.0.0-"+commitHash+"-"+Date.now()),
@@ -77,7 +89,7 @@ module.exports = mergeWithRules({
 		// note(jae): 2021-07-18
 		// build production files directly into a place where Go server
 		// can access it. Go's embed files functionality can't access files outside of it's directory.
-		path: path.resolve(__dirname, "../../go/server/internal/staticfiles/dist"),
+		path: path.resolve(__dirname, "../../go/server/internal/staticfile/dist"),
 	},
 	optimization: {
 		minimize: true,

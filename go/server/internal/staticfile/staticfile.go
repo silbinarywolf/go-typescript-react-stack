@@ -1,4 +1,4 @@
-package staticfiles
+package staticfile
 
 import (
 	"embed"

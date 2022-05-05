@@ -9,7 +9,7 @@ interface GlobalProvidersProps {
 }
 
 // GlobalProviders are were all providers that need to be accessed across the entire application
-// go. 
+// go.
 //
 // note(jae): 2021-08-17
 // We put our providers in a seperate function so that if/when we need to add more in the future

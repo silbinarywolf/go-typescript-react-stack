@@ -41,11 +41,11 @@ export default function RegisterPage(): JSX.Element {
 		<Container>
 			<h1>Register page</h1>
 			<form onSubmit={onFormSubmit}>
-				{errorMessage !== "" && 
-                    <div>
-                    	<p>{errorMessage}</p>
-                    </div>
-				}
+				{errorMessage !== "" && (
+					<div>
+						<p>{errorMessage}</p>
+					</div>
+				)}
 				<FieldHolder
 					id="Form_Email"
 					label="Email"

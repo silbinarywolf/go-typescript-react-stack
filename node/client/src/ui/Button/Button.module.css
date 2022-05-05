@@ -1,7 +1,7 @@
 .button {
-    color: #fff;
-	background: #333;
 	padding: 8px 16px;
+	background: #333;
+	color: #fff;
 }
 
 .button[disabled] {
