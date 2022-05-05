@@ -24,16 +24,18 @@ function GlobalProviders({children}: GlobalProvidersProps): JSX.Element {
 
 export default function App(): JSX.Element {
 	return (
-		<ErrorBoundary>
-			<GlobalProviders>
-				{
-				// note(jae): 2021-08-18
-				// The reasoning for having a seperate "Main" component is so that
-				// it has access to any global state providers and if it has an error, it's caught
-				// by the error boundary
-				}
-				<Main/>
-			</GlobalProviders>
-		</ErrorBoundary>
+		<React.StrictMode>
+			<ErrorBoundary>
+				<GlobalProviders>
+					{
+					// note(jae): 2021-08-18
+					// The reasoning for having a seperate "Main" component is so that
+					// it has access to any global state providers and if it has an error, it's caught
+					// by the error boundary
+					}
+					<Main/>
+				</GlobalProviders>
+			</ErrorBoundary>
+		</React.StrictMode>
 	);
 }
