@@ -4,7 +4,7 @@
 
 ## Requirements
 
-* [Go 1.17+](https://golang.org/dl/)
+* [Go 1.18+](https://golang.org/dl/)
 
 ## How to build production
 
