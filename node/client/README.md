@@ -22,7 +22,7 @@ npm install
 npm run start
 ```
 
-- Visit the application in the browser by going to [http://localhost:8080](http://localhost:8080)
+- Visit the application in the browser by going to [http://localhost:9000](http://localhost:9000)
 
 ## How to build production
 
