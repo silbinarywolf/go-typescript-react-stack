@@ -12,20 +12,20 @@ export class ErrorBoundary extends React.Component<Props, State> {
 		error: undefined,
 	};
 
-	static getDerivedStateFromError(error: Error) {
+	static getDerivedStateFromError(error: Error): State {
 		return {
 			error: error,
 		};
 	}
 
-	componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+	componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
 		// You can also log the error to an error reporting service
 		// logErrorToMyService(error, errorInfo);
 	}
 
-	render() {
+	render(): React.ReactNode {
 		const {
-			error
+			error,
 		} = this.state;
 		if (error) {
 			return (

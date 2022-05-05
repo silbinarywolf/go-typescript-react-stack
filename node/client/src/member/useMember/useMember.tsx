@@ -38,7 +38,7 @@ export function MemberProvider({children}: MemberProviderProps): JSX.Element {
 		setIsLoggedIn: setIsLoggedIn,
 	};
 	return (
-		<MemberContext.Provider 
+		<MemberContext.Provider
 			value={consumerValue}
 		>
 			{children}

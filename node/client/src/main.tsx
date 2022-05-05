@@ -4,7 +4,7 @@ import ReactDOM from "react-dom";
 
 import App from "~/core/App/App";
 
-import "~/main.module.css";
+import "~/main.css";
 
 function main(): void {
 	if (!VERSION) {
@@ -21,10 +21,10 @@ function main(): void {
 		}
 		axios.defaults.baseURL = baseURL;
 	}
-	
+
 	ReactDOM.render(
 		<App/>,
-	    document.getElementById("app")
+		document.getElementById("app")
 	);
 }
 main();

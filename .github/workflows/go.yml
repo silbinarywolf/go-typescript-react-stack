@@ -1,5 +1,9 @@
 name: TypeScript/React + Go
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '*.md'
+      - '**/.md'
 jobs:
   linux:
       name: Ubuntu
@@ -24,7 +28,7 @@ jobs:
 
       strategy:
         matrix:
-          go: ['1.17']
+          go: ['1.18']
       env:
         name: ubuntu
       steps:
@@ -34,14 +38,14 @@ jobs:
         - name: Setup Node
           uses: actions/setup-node@v2
           with:
-            node-version: '14'
+            node-version: '16'
 
         - name: Frontend React/TypeScript Build And Lint
           run: |
             cd node/client
             npm install
-            npm run-script build
-            npm run-script lint
+            npm run build
+            npm run lint
 
         - name: Setup Go
           uses: actions/setup-go@v2

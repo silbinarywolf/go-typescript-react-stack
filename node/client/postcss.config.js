@@ -5,5 +5,5 @@ module.exports = {
 		"postcss-preset-env": {},
 		"autoprefixer": {},
 		"cssnano": {},
-	}
+	},
 };

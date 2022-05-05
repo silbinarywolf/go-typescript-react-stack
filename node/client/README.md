@@ -4,7 +4,7 @@
 
 ## Requirements
 
-* Node v14.15.0+ (LTS)
+* Node v16.13.2+ (LTS)
 
 ## Install node_modules before running development or production
 
@@ -19,15 +19,15 @@ npm install
 - Open a terminal and run the following.
 
 ```sh
-npm run-script start
+npm run start
 ```
 
-- Visit the application in the browser by going to [http://localhost:8080](http://localhost:8080)
+- Visit the application in the browser by going to [http://localhost:9000](http://localhost:9000)
 
 ## How to build production
 
 - Open the terminal and run the following.
 
 ```sh
-npm run-script build
+npm run build
 ```

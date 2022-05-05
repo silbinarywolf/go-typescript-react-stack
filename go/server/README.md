@@ -4,7 +4,7 @@
 
 ## Requirements
 
-* [Go 1.17+](https://golang.org/dl/)
+* [Go 1.18+](https://golang.org/dl/)
 
 ## How to build production
 
@@ -22,13 +22,27 @@ internal\staticfiles\staticfiles_notdev.go:15:12: pattern dist: no matching file
 go build
 ```
 
+- Run the server with:
+
+```sh
+./server
+```
+
+- It will now be running on "http://localhost:8080" by default.
+
 ## How run for local development
+
+- You'll need to setup your database, which you can do by following the [PostgreSQL Server Documentation here.](db/README.md)
+
+- Make a copy of `config.example.json` and save it as `config.json`.
 
 - Open a terminal and run the following. Building with `-tags dev` tells the server to not try to include the frontend client code.
 
 ```sh
 go build -tags dev && ./server
 ```
+
+- It will now be running on "http://localhost:8080" by default, but will only serve API requests, no static files like *.html, *.css, *.js, etc.
 
 ## How to run integration tests
 

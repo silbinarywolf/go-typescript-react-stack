@@ -1,7 +1,7 @@
 //go:build dev
 // +build dev
 
-package staticfiles
+package staticfile
 
 import (
 	"embed"

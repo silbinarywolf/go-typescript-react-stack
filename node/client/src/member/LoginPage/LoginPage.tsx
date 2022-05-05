@@ -1,12 +1,12 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 
 import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
 import { useMember } from "~/member/useMember/useMember";
 import { Button } from "~/ui/Button/Button";
 import { Container } from "~/ui/Container/Container";
-import { normalizeError } from "~/util/Fetch";
+import { extractStatusCode, normalizeError } from "~/util/Fetch";
 
 interface LoginFormValues {
     Email: string;
@@ -15,7 +15,7 @@ interface LoginFormValues {
 
 /**
  * getSearchParams extracts parameters after the ? in the URL.
- * 
+ *
  * We use our own implementation to have stronger browser support and to support
  * hash-style URLs, ie. "localhost:8080/#/home?myparam=1"
  */
@@ -24,7 +24,10 @@ function getSearchParams(queryString: string): {[key: string]: string | undefine
 	queryString = queryString.replace(/.*?\?/,"");
 	if (queryString.length > 0) {
 		const keyValPairs = queryString.split("&");
-		for (let pairNum in keyValPairs) {
+		for (const pairNum in keyValPairs) {
+			if (!Object.prototype.hasOwnProperty.call(keyValPairs, pairNum)) {
+				continue;
+			}
 			const keyAndValue = keyValPairs[pairNum].split("=");
 			const key = keyAndValue[0];
 			if (!key.length) {
@@ -56,7 +59,7 @@ export default function LoginPage(): JSX.Element {
 		try {
 			resp = await axios.post("/api/member/login", formData, {withCredentials: true});
 		} catch (err) {
-			if (err && err.response && err.response.status === 401) {
+			if (extractStatusCode(err) === 401) {
 				// If unauthorized, ensure user is logged out
 				await setIsLoggedIn(false);
 			}
@@ -94,7 +97,7 @@ export default function LoginPage(): JSX.Element {
 			}
 			{(isLoggedIn === false) &&
 				<form onSubmit={onFormSubmit}>
-					{errorMessage !== "" && 
+					{errorMessage !== "" &&
 						<div>
 							<p>{errorMessage}</p>
 						</div>
