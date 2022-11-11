@@ -9,7 +9,7 @@ jobs:
       name: Ubuntu
       # This line is required to make Go see other containers, ie. postgres
       # See: https://github.community/t/services-name-resolution-error/16716/5
-      container: golang:1.17-buster
+      container: golang:1.19-buster
       runs-on: ubuntu-latest
       services:
         # Label used to access the service container
@@ -28,7 +28,7 @@ jobs:
 
       strategy:
         matrix:
-          go: ['1.18']
+          go: ['1.19']
       env:
         name: ubuntu
       steps:
@@ -61,9 +61,7 @@ jobs:
 
         - name: Backend Unit and Integration Tests
           env:
-            POSTGRES_PASSWORD: password
-            POSTGRES_HOST: postgres
-            POSTGRES_PORT: 5432
+            DATABASE_URL: "postgres://postgres:password@postgres:5432/postgres?sslmode=disable"
           run: |
             cd go/server/internal
             go test -tags dev ./...

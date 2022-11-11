@@ -1,6 +1,6 @@
 module github.com/silbinarywolf/go-typescript-react-stack/go
 
-go 1.18
+go 1.19
 
 require (
 	github.com/chromedp/chromedp v0.7.4

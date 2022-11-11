@@ -18,7 +18,7 @@ func init() {
 		if err := staticfile.AddRoutes(); err != nil {
 			return fmt.Errorf(`failed to setup serving ".js, .css" assets: %w`, err)
 		}
-		if _, err := examplemodule.New(); err != nil {
+		if _, err := examplemodule.New(bs.DB()); err != nil {
 			return fmt.Errorf(`failed to init module: %w`, err)
 		}
 		// Setup member
