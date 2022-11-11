@@ -31,11 +31,12 @@ func TestMain(m *testing.M) {
 
 	// Initialize bootstrap and test module
 	{
-		bs, err := bootstrap.InitNoModules(&configuration.Config{
-			Database: configuration.DatabaseConfig{
-				URL: "postgres://postgres:" + os.Getenv("POSTGRES_PASSWORD") + "@" + os.Getenv("POSTGRES_HOST") + ":" + os.Getenv("POSTGRES_PORT") + "/postgres?sslmode=disable",
-			},
-		})
+		config := &configuration.Config{}
+		config.Database.URL = os.Getenv("DATABASE_URL")
+		if config.Database.URL == "" {
+			config.Database.URL = "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"
+		}
+		bs, err := bootstrap.InitNoModules(config)
 		if err != nil {
 			panic(err)
 		}
