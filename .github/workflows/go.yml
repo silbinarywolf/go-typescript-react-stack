@@ -61,7 +61,7 @@ jobs:
 
         - name: Backend Unit and Integration Tests
           env:
-            DATABASE_URL: "postgres://postgres:password@postgres:5432/postgres?sslmode=disable"
+            DATABASE_URL: "postgres://postgres:password@postgres:5432/postgres"
           run: |
             cd go/server/internal
             go test -tags dev ./...
