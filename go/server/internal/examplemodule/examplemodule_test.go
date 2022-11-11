@@ -8,6 +8,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/bootstrap"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 )
 
 var (
@@ -16,10 +19,26 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	// Setup bootstrap
+	// ie. database
+	var bs *bootstrap.Bootstrap
+	{
+		config := &configuration.Config{}
+		config.Database.URL = os.Getenv("DATABASE_URL")
+		if config.Database.URL == "" {
+			config.Database.URL = "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"
+		}
+		var err error
+		bs, err = bootstrap.InitNoModules(config)
+		if err != nil {
+			panic(fmt.Sprintf(`failed to init bootstrap: %s`, err))
+		}
+	}
+
 	// initialize module once before running all tests.
 	// this includes adding routes like "/api/[MODULE]/call"
 	var err error
-	testModule, err = New()
+	testModule, err = New(bs.DB())
 	if err != nil {
 		panic(fmt.Sprintf(`failed to init module: %s`, err))
 	}
