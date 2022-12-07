@@ -1,10 +1,12 @@
 import axios from "axios";
 import React, { useState } from "react";
+import { useHistory } from "react-router-dom";
 import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
 
 import { Button } from "~/ui/Button/Button";
 import { Container } from "~/ui/Container/Container";
-import { normalizeError } from "~/util/Fetch";
+import { getBackURLOrDashboard, normalizeError } from "~/util/Fetch";
+import { useMember } from "../useMember/useMember";
 
 interface RegisterFormValues {
     Email: string;
@@ -12,6 +14,26 @@ interface RegisterFormValues {
 }
 
 export default function RegisterPage(): JSX.Element {
+	const { isLoggedIn } = useMember();
+	if (isLoggedIn === true) {
+		return <RegisterPageLoggedIn/>;
+	}
+	return <RegisterPageNotLoggedIn/>;
+}
+
+
+function RegisterPageLoggedIn(): JSX.Element {
+	return (
+		<Container>
+			<h1>Register page</h1>
+			<p>You are already logged in.</p>
+		</Container>
+	);
+}
+
+function RegisterPageNotLoggedIn(): JSX.Element {
+	const history = useHistory();
+	const { setIsLoggedIn } = useMember();
 	const [formData, setFormData] = useState<RegisterFormValues>({
 		Email: "",
 		Password: "",
@@ -34,7 +56,11 @@ export default function RegisterPage(): JSX.Element {
 		} finally {
 			setIsFormSubmitting(false);
 		}
+		await setIsLoggedIn(true);
 		setErrorMessage(resp.data);
+
+		const redirectToURL = getBackURLOrDashboard()
+		history.push(redirectToURL);
 	}
 
 	return (

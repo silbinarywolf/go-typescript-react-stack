@@ -145,32 +145,8 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate token
-	tokenString, err := auth.GenerateJWT(member.Email, time.Now())
-	if err != nil {
-		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
-		return
-	}
+	doLogin(w, member.Email)
 
-	http.SetCookie(w, &http.Cookie{
-		Name:  "Authorization",
-		Value: "Bearer " + tokenString,
-		Path:  "/",
-		// note(jae): 2021-08-16
-		// - HttpOnly, only accessible via browser requests. JavaScript cannot read it
-		// - SameSite
-		// - Secure
-		//
-		// These three properties are recommended as best practice for JWT tokens.
-		// The key reason being that if you store this token in LocalStorage/SessionStorage, it could be stolen
-		// by client-side JS code.
-		//
-		// See here if you're curious: https://blog.logrocket.com/jwt-authentication-best-practices
-		// Mirror: https://web.archive.org/web/20210816043710/https://blog.logrocket.com/jwt-authentication-best-practices/
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-	})
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, "Login successful")
@@ -218,6 +194,11 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 			},
 		)
 		if err != nil {
+			if strings.Contains(err.Error(), `relation "Member" does not exist`) {
+				log.Printf("error checking for existing email: %v\n\nSuggestion:\n- Member table doesn't seem to exist, have you run dbmate migrations or are you connecting to the correct database?", err)
+			} else {
+				log.Printf("error checking for existing email: %v", err)
+			}
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
@@ -270,21 +251,24 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Register new member
+	member := &MemberRegister{}
 	{
-		record := &MemberRegister{}
-		record.Email = req.Email
-		record.Password = hashedPassword
-		record.PasswordType = "bcrypt"
+		member.Email = req.Email
+		member.Password = hashedPassword
+		member.PasswordType = "bcrypt"
 		if _, err := m.db.NamedExecContext(
 			context.Background(),
 			`INSERT INTO "Member" (`+memberRegisterFieldList+`) VALUES
 		(`+memberRegisterInterpolateFieldList+`)`,
-			record,
+			member,
 		); err != nil {
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
 	}
+
+	// Login after registration
+	doLogin(w, member.Email)
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -322,4 +306,34 @@ func (m *MemberModule) handleMe(claims *auth.Member, w http.ResponseWriter, r *h
 		http.Error(w, "unexpected error with encoding", http.StatusInternalServerError)
 		return
 	}
+}
+
+// doLogin will generate the login token for the given member email address
+func doLogin(w http.ResponseWriter, email string) {
+	// Generate token
+	tokenString, err := auth.GenerateJWT(email, time.Now())
+	if err != nil {
+		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "Authorization",
+		Value: "Bearer " + tokenString,
+		Path:  "/",
+		// note(jae): 2021-08-16
+		// - HttpOnly, only accessible via browser requests. JavaScript cannot read it
+		// - SameSite
+		// - Secure
+		//
+		// These three properties are recommended as best practice for JWT tokens.
+		// The key reason being that if you store this token in LocalStorage/SessionStorage, it could be stolen
+		// by client-side JS code.
+		//
+		// See here if you're curious: https://blog.logrocket.com/jwt-authentication-best-practices
+		// Mirror: https://web.archive.org/web/20210816043710/https://blog.logrocket.com/jwt-authentication-best-practices/
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
 }
