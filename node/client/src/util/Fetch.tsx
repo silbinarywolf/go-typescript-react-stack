@@ -88,5 +88,5 @@ export function getBackURLOrDashboard(): string {
 		// - output: http://localhost:9000/#/www.google.com/dashboard
 		return searchParams.back_url;
 	}
-	return "/dashboard"
+	return "/dashboard";
 }

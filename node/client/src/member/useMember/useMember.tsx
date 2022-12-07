@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useEffect, useState } from "react";
 import localforage from "localforage";
 
 const MemberContext = createContext<MemberContextProps | undefined>(undefined);
@@ -40,9 +40,9 @@ export function MemberProvider({children}: MemberProviderProps): JSX.Element | n
 		}
 		setIsLoading(true);
 		load();
-	}, [isLoading])
+	}, [isLoading]);
 
-	async function setIsLoggedIn(value: boolean): Promise<void> {
+	const setIsLoggedIn = useCallback(async (value: boolean): Promise<void> => {
 		if (value !== true) {
 			await localforage.removeItem("isLoggedIn");
 			_setIsLoggedIn(false);
@@ -50,7 +50,7 @@ export function MemberProvider({children}: MemberProviderProps): JSX.Element | n
 		}
 		await localforage.setItem("isLoggedIn", true);
 		_setIsLoggedIn(true);
-	}
+	}, []);
 
 	const consumerValue = {
 		isLoggedIn: isLoggedIn,

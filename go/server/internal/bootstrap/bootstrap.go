@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/auth"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/configuration"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
 
@@ -122,9 +121,6 @@ func InitNoModules(config *configuration.Config) (*Bootstrap, error) {
 	db, err := sqlw.Connect(driverAndURL[0], config.Database.URL)
 	if err != nil {
 		return nil, fmt.Errorf(`unable to connect to database: %w`, err)
-	}
-	if err := auth.Init(db); err != nil {
-		return nil, fmt.Errorf(`unable to init auth: %w`, err)
 	}
 
 	// Setup CORS (Cross-Origin Resource Sharing) and http server

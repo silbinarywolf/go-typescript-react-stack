@@ -5,7 +5,7 @@ import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
 
 import { Button } from "~/ui/Button/Button";
 import { Container } from "~/ui/Container/Container";
-import { getBackURLOrDashboard, normalizeError } from "~/util/Fetch";
+import { normalizeError } from "~/util/Fetch";
 import { useMember } from "../useMember/useMember";
 
 interface RegisterFormValues {
@@ -56,11 +56,13 @@ function RegisterPageNotLoggedIn(): JSX.Element {
 		} finally {
 			setIsFormSubmitting(false);
 		}
-		await setIsLoggedIn(true);
 		setErrorMessage(resp.data);
 
-		const redirectToURL = getBackURLOrDashboard()
-		history.push(redirectToURL);
+		// note(jae): 2022-12-07
+		// Disabled as its broken on the backend somehow.
+		// await setIsLoggedIn(true);
+		// const redirectToURL = getBackURLOrDashboard();
+		// history.push(redirectToURL);
 	}
 
 	return (

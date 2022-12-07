@@ -71,7 +71,7 @@ export default function LoginPage(): JSX.Element {
 		await setIsLoggedIn(true);
 		setErrorMessage(resp.data);
 
-		const redirectToURL = getBackURLOrDashboard()
+		const redirectToURL = getBackURLOrDashboard();
 		history.push(redirectToURL);
 	}
 
@@ -136,6 +136,11 @@ export default function LoginPage(): JSX.Element {
 					<div>
 						<Link to="register">
 							New? Register a new account by clicking here.
+						</Link>
+					</div>
+					<div>
+						<Link to="examplemodule">
+							Lets just go to the examplemodule page.
 						</Link>
 					</div>
 				</form>

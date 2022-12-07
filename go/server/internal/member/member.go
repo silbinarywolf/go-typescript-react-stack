@@ -22,9 +22,11 @@ const modulePath = "/api/member"
 
 var memberFieldList = sqlutil.GetDBFieldList(&Member{})
 
-var memberRegisterFieldList = sqlutil.GetDBFieldList(&MemberRegister{})
+var memberLoginFieldList = sqlutil.GetDBFieldList(&memberLogin{})
 
-var memberRegisterInterpolateFieldList = sqlutil.GetDBInterpolateList(&MemberRegister{})
+var memberRegisterFieldList = sqlutil.GetDBFieldList(&memberRegister{})
+
+var memberRegisterInterpolateFieldList = sqlutil.GetDBInterpolateList(&memberRegister{})
 
 // MemberModule holds the arguments we pass to its New function
 // such as the db, logger or other things
@@ -47,13 +49,24 @@ func New(db *sqlw.DB) (*MemberModule, error) {
 }
 
 type Member struct {
+	ID int64 `db:"ID"`
+	memberWithoutID
+}
+
+type memberWithoutID struct {
 	Email     string `db:"Email"`
 	FirstName string `db:"FirstName"`
 	LastName  string `db:"LastName"`
 }
 
-type MemberRegister struct {
+type memberLogin struct {
 	Member
+	Password     string `db:"Password"`
+	PasswordType string `db:"PasswordType"`
+}
+
+type memberRegister struct {
+	memberWithoutID
 	Password     string `db:"Password"`
 	PasswordType string `db:"PasswordType"`
 }
@@ -99,18 +112,18 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if member exists
-	var member MemberRegister
+	var member memberLogin
 	{
 		stmt, err := m.db.PrepareNamedContext(
 			context.Background(),
-			`SELECT `+memberRegisterFieldList+` FROM "Member" WHERE "Email" = :Email`,
+			`SELECT `+memberLoginFieldList+` FROM "Member" WHERE "Email" = :Email`,
 		)
 		if err != nil {
 			log.Printf("login: prepared query error: %s", err)
 			http.Error(w, "Unexpected error logging in", http.StatusInternalServerError)
 			return
 		}
-		var memberList []MemberRegister
+		var memberList []memberLogin
 		if err := stmt.SelectContext(
 			r.Context(),
 			&memberList,
@@ -145,7 +158,11 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doLogin(w, member.Email)
+	if err := doLogin(w, &member.Member); err != nil {
+		log.Printf("unable to generate JWT: %v", err)
+		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -204,6 +221,7 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 		rowCount, err := res.RowsAffected()
 		if err != nil {
+			log.Printf("error checking rows affected for existing email: %v", err)
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
@@ -231,6 +249,7 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 		// Go's bcrypt implementation does salting as well
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 		if err != nil {
+			log.Printf("error generating hash for password: %v", err)
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
@@ -251,24 +270,47 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Register new member
-	member := &MemberRegister{}
+	var member Member
 	{
-		member.Email = req.Email
-		member.Password = hashedPassword
-		member.PasswordType = "bcrypt"
-		if _, err := m.db.NamedExecContext(
-			context.Background(),
-			`INSERT INTO "Member" (`+memberRegisterFieldList+`) VALUES
-		(`+memberRegisterInterpolateFieldList+`)`,
-			member,
-		); err != nil {
+		memberReg := &memberRegister{}
+		memberReg.Email = req.Email
+		memberReg.Password = hashedPassword
+		memberReg.PasswordType = "bcrypt"
+		stmt, err := m.db.PrepareNamedContext(
+			r.Context(),
+			`INSERT INTO "Member" (`+memberRegisterFieldList+`)
+			VALUES (`+memberRegisterInterpolateFieldList+`) RETURNING "ID"`,
+		)
+		if err != nil {
+			log.Printf("error preparing register statement: %v", err)
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
+		var id int64
+		err = stmt.GetContext(r.Context(), &id, memberReg)
+		if err != nil {
+			log.Printf("error inserting Member: %v", err)
+			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
+			return
+		}
+		if id == 0 {
+			log.Printf("unable to get ID from insert")
+			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
+			return
+		}
+		member.ID = id
+		member.memberWithoutID = memberReg.memberWithoutID
 	}
 
+	// note(jae): 2022-12-07
+	// Couldn't get this working and ran out of time
+	//
 	// Login after registration
-	doLogin(w, member.Email)
+	/* if err := doLogin(w, &member); err != nil {
+		log.Printf("unable to generate JWT: %v", err)
+		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
+		return
+	} */
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -309,12 +351,11 @@ func (m *MemberModule) handleMe(claims *auth.Member, w http.ResponseWriter, r *h
 }
 
 // doLogin will generate the login token for the given member email address
-func doLogin(w http.ResponseWriter, email string) {
+func doLogin(w http.ResponseWriter, member *Member) error {
 	// Generate token
-	tokenString, err := auth.GenerateJWT(email, time.Now())
+	tokenString, err := auth.GenerateJWT(member.ID, member.Email, time.Now())
 	if err != nil {
-		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -336,4 +377,5 @@ func doLogin(w http.ResponseWriter, email string) {
 		SameSite: http.SameSiteStrictMode,
 		Secure:   true,
 	})
+	return nil
 }

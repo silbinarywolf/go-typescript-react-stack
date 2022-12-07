@@ -92,7 +92,11 @@ export default function App(): JSX.Element {
 								component={DashboardPage}
 								exact
 							/>
-							<AuthRoute
+							{
+							// note(jae): 2022-12-07
+							// Used to be AuthRoute but not bothering for now
+							}
+							<Route
 								path={"/examplemodule"}
 								component={ExampleModulePage}
 								exact
