@@ -22,9 +22,11 @@ const modulePath = "/api/member"
 
 var memberFieldList = sqlutil.GetDBFieldList(&Member{})
 
-var memberRegisterFieldList = sqlutil.GetDBFieldList(&MemberRegister{})
+var memberLoginFieldList = sqlutil.GetDBFieldList(&memberLogin{})
 
-var memberRegisterInterpolateFieldList = sqlutil.GetDBInterpolateList(&MemberRegister{})
+var memberRegisterFieldList = sqlutil.GetDBFieldList(&memberRegister{})
+
+var memberRegisterInterpolateFieldList = sqlutil.GetDBInterpolateList(&memberRegister{})
 
 // MemberModule holds the arguments we pass to its New function
 // such as the db, logger or other things
@@ -47,13 +49,24 @@ func New(db *sqlw.DB) (*MemberModule, error) {
 }
 
 type Member struct {
+	ID int64 `db:"ID"`
+	memberWithoutID
+}
+
+type memberWithoutID struct {
 	Email     string `db:"Email"`
 	FirstName string `db:"FirstName"`
 	LastName  string `db:"LastName"`
 }
 
-type MemberRegister struct {
+type memberLogin struct {
 	Member
+	Password     string `db:"Password"`
+	PasswordType string `db:"PasswordType"`
+}
+
+type memberRegister struct {
+	memberWithoutID
 	Password     string `db:"Password"`
 	PasswordType string `db:"PasswordType"`
 }
@@ -99,18 +112,18 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if member exists
-	var member MemberRegister
+	var member memberLogin
 	{
 		stmt, err := m.db.PrepareNamedContext(
 			context.Background(),
-			`SELECT `+memberRegisterFieldList+` FROM "Member" WHERE "Email" = :Email`,
+			`SELECT `+memberLoginFieldList+` FROM "Member" WHERE "Email" = :Email`,
 		)
 		if err != nil {
 			log.Printf("login: prepared query error: %s", err)
 			http.Error(w, "Unexpected error logging in", http.StatusInternalServerError)
 			return
 		}
-		var memberList []MemberRegister
+		var memberList []memberLogin
 		if err := stmt.SelectContext(
 			r.Context(),
 			&memberList,
@@ -145,32 +158,12 @@ func (m *MemberModule) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate token
-	tokenString, err := auth.GenerateJWT(member.Email, time.Now())
-	if err != nil {
+	if err := doLogin(w, &member.Member); err != nil {
+		log.Printf("unable to generate JWT: %v", err)
 		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:  "Authorization",
-		Value: "Bearer " + tokenString,
-		Path:  "/",
-		// note(jae): 2021-08-16
-		// - HttpOnly, only accessible via browser requests. JavaScript cannot read it
-		// - SameSite
-		// - Secure
-		//
-		// These three properties are recommended as best practice for JWT tokens.
-		// The key reason being that if you store this token in LocalStorage/SessionStorage, it could be stolen
-		// by client-side JS code.
-		//
-		// See here if you're curious: https://blog.logrocket.com/jwt-authentication-best-practices
-		// Mirror: https://web.archive.org/web/20210816043710/https://blog.logrocket.com/jwt-authentication-best-practices/
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-	})
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, "Login successful")
@@ -218,11 +211,17 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 			},
 		)
 		if err != nil {
+			if strings.Contains(err.Error(), `relation "Member" does not exist`) {
+				log.Printf("error checking for existing email: %v\n\nSuggestion:\n- Member table doesn't seem to exist, have you run dbmate migrations or are you connecting to the correct database?", err)
+			} else {
+				log.Printf("error checking for existing email: %v", err)
+			}
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
 		rowCount, err := res.RowsAffected()
 		if err != nil {
+			log.Printf("error checking rows affected for existing email: %v", err)
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
@@ -250,6 +249,7 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 		// Go's bcrypt implementation does salting as well
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 		if err != nil {
+			log.Printf("error generating hash for password: %v", err)
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
@@ -270,21 +270,47 @@ func (m *MemberModule) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Register new member
+	var member Member
 	{
-		record := &MemberRegister{}
-		record.Email = req.Email
-		record.Password = hashedPassword
-		record.PasswordType = "bcrypt"
-		if _, err := m.db.NamedExecContext(
-			context.Background(),
-			`INSERT INTO "Member" (`+memberRegisterFieldList+`) VALUES
-		(`+memberRegisterInterpolateFieldList+`)`,
-			record,
-		); err != nil {
+		memberReg := &memberRegister{}
+		memberReg.Email = req.Email
+		memberReg.Password = hashedPassword
+		memberReg.PasswordType = "bcrypt"
+		stmt, err := m.db.PrepareNamedContext(
+			r.Context(),
+			`INSERT INTO "Member" (`+memberRegisterFieldList+`)
+			VALUES (`+memberRegisterInterpolateFieldList+`) RETURNING "ID"`,
+		)
+		if err != nil {
+			log.Printf("error preparing register statement: %v", err)
 			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
 			return
 		}
+		var id int64
+		err = stmt.GetContext(r.Context(), &id, memberReg)
+		if err != nil {
+			log.Printf("error inserting Member: %v", err)
+			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
+			return
+		}
+		if id == 0 {
+			log.Printf("unable to get ID from insert")
+			http.Error(w, "Unexpected error registering", http.StatusInternalServerError)
+			return
+		}
+		member.ID = id
+		member.memberWithoutID = memberReg.memberWithoutID
 	}
+
+	// note(jae): 2022-12-07
+	// Couldn't get this working and ran out of time
+	//
+	// Login after registration
+	/* if err := doLogin(w, &member); err != nil {
+		log.Printf("unable to generate JWT: %v", err)
+		http.Error(w, "Unexpected error generating JWT", http.StatusInternalServerError)
+		return
+	} */
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -322,4 +348,34 @@ func (m *MemberModule) handleMe(claims *auth.Member, w http.ResponseWriter, r *h
 		http.Error(w, "unexpected error with encoding", http.StatusInternalServerError)
 		return
 	}
+}
+
+// doLogin will generate the login token for the given member email address
+func doLogin(w http.ResponseWriter, member *Member) error {
+	// Generate token
+	tokenString, err := auth.GenerateJWT(member.ID, member.Email, time.Now())
+	if err != nil {
+		return err
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "Authorization",
+		Value: "Bearer " + tokenString,
+		Path:  "/",
+		// note(jae): 2021-08-16
+		// - HttpOnly, only accessible via browser requests. JavaScript cannot read it
+		// - SameSite
+		// - Secure
+		//
+		// These three properties are recommended as best practice for JWT tokens.
+		// The key reason being that if you store this token in LocalStorage/SessionStorage, it could be stolen
+		// by client-side JS code.
+		//
+		// See here if you're curious: https://blog.logrocket.com/jwt-authentication-best-practices
+		// Mirror: https://web.archive.org/web/20210816043710/https://blog.logrocket.com/jwt-authentication-best-practices/
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
+	return nil
 }

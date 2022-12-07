@@ -8,7 +8,7 @@ import (
 )
 
 func TestGenValid_Good_EmailNow(t *testing.T) {
-	token, err := GenerateJWT("myemail@test.com", time.Now())
+	token, err := GenerateJWT(1, "myemail@test.com", time.Now())
 	if err != nil {
 		t.Fatalf("unable to generate JWT, got unexpected error: %s", err)
 	}
@@ -22,7 +22,7 @@ func TestGenValid_Good_EmailNow(t *testing.T) {
 // This will test if a token generated for a future time (1 minute into the future) is
 // valid. It should not be.
 func TestGenValid_Bad_FutureToken(t *testing.T) {
-	token, err := GenerateJWT("myemail@test.com", time.Now().Add(1*time.Minute))
+	token, err := GenerateJWT(1, "myemail@test.com", time.Now().Add(1*time.Minute))
 	if err != nil {
 		t.Fatalf("unable to generate JWT, got unexpected error: %s", err)
 	}
@@ -55,7 +55,7 @@ func TestGenValid_Bad_ExpiredToken(t *testing.T) {
 		jwt.TimeFunc = jwtPrevTimeFunc
 	}()
 
-	token, err := GenerateJWT("myemail@test.com", time.Now())
+	token, err := GenerateJWT(1, "myemail@test.com", time.Now())
 	if err != nil {
 		t.Fatalf("unable to generate JWT, got unexpected error: %s", err)
 	}

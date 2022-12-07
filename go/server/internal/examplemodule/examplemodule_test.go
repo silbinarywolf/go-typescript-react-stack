@@ -47,9 +47,9 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestCall(t *testing.T) {
+func TestList(t *testing.T) {
 	// create request, setup recorder, then fire request at endpoint
-	url := modulePath + "/call"
+	url := modulePath + "/list"
 	req, err := http.NewRequestWithContext(context.Background(), "GET", url, nil)
 	if err != nil {
 		t.Fatalf(`failed to create request: %s`, err)
@@ -62,13 +62,13 @@ func TestCall(t *testing.T) {
 	h.ServeHTTP(rec, req)
 
 	// Check status code matches
-	if status := rec.Code; status != http.StatusInternalServerError {
+	if status := rec.Code; status != http.StatusOK {
 		t.Errorf("returned wrong status code.\ngot: %v\nwant %v", status, http.StatusInternalServerError)
 	}
 
 	// Check it returns what we expect in the HTTP body
 	got := strings.TrimSpace(rec.Body.String())
-	expected := `nothing has been implemented for this API yet`
+	expected := `{"items":[{"title":"A Fake Todo Item Title","description":"This data should come from the database instead! Not be mocked in the backend!"}]}`
 	if got != expected {
 		t.Errorf("returned unexpected body.\ngot: %v\nwant %v", got, expected)
 	}

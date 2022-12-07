@@ -15,11 +15,13 @@ import (
 
 // Member holds data that is exposed to authenticated requests
 type Member struct {
+	ID    int64
 	Email string
 }
 
 // claims are what we store in the JWT token
 type claims struct {
+	ID    int64  `json:"id"`
 	Email string `json:"email"`
 	jwt.StandardClaims
 }
@@ -31,7 +33,7 @@ type claims struct {
 // NOTE: Replacing this secret will invalidate all current login sessions
 //
 // generateHMACSecret function below can be used to generate a new key.
-var hmacSecret []byte = []byte{123, 223, 105, 19, 226, 32, 57, 149, 101, 36, 248, 157, 23, 171, 122, 157, 121, 93, 231, 151, 140, 231, 80, 9, 6, 250, 29, 252, 8, 94, 188, 58}
+var hmacSecret []byte = []byte{123, 123, 205, 11, 226, 32, 57, 149, 101, 36, 248, 157, 23, 171, 122, 157, 121, 93, 231, 151, 140, 231, 80, 9, 6, 250, 29, 252, 8, 94, 188, 58}
 
 // expiresInTime is in how many seconds a JWT will expire
 //
@@ -62,10 +64,17 @@ func generateHMACSecret() string {
 }
 
 // GenerateJWT will create a new JWT token for a user
-func GenerateJWT(email string, now time.Time) (string, error) {
+func GenerateJWT(id int64, email string, now time.Time) (string, error) {
+	if id == 0 {
+		return "", errors.New("ID cannot be 0 for GenerateJWT")
+	}
+	if email == "" {
+		return "", errors.New("Email cannot be blank for GenerateJWT")
+	}
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims{
+		ID:    id,
 		Email: email,
 		StandardClaims: jwt.StandardClaims{
 			// ExpiresAt maps to "exp" in the JWT spec
@@ -136,11 +145,16 @@ func AuthorizedHandler(endpoint func(*Member, http.ResponseWriter, *http.Request
 			http.Error(w, "invalid JWT", http.StatusUnauthorized)
 			return
 		}
+		if claims.ID == 0 {
+			http.Error(w, "unexpected error, JWT missing ID", http.StatusInternalServerError)
+			return
+		}
 		if claims.Email == "" {
 			http.Error(w, "unexpected error, JWT missing Email", http.StatusInternalServerError)
 			return
 		}
 		member := &Member{
+			ID:    claims.ID,
 			Email: claims.Email,
 		}
 		endpoint(member, w, r)

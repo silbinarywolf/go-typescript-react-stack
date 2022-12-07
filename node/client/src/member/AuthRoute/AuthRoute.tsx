@@ -16,7 +16,7 @@ interface AuthRouteProps extends RouteProps {
  */
 export function AuthRoute(props: AuthRouteProps): JSX.Element {
 	const {isLoggedIn} = useMember();
-	if (!isLoggedIn) {
+	if (isLoggedIn === false) {
 		let wantedPath = "";
 		if (Array.isArray(props.path)) {
 			wantedPath = props.path[0];

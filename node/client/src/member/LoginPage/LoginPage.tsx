@@ -1,12 +1,12 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 
 import { FieldHolder } from "~/form/FieldHolder/FieldHolder";
 import { useMember } from "~/member/useMember/useMember";
 import { Button } from "~/ui/Button/Button";
 import { Container } from "~/ui/Container/Container";
-import { extractStatusCode, normalizeError } from "~/util/Fetch";
+import { extractStatusCode, getBackURLOrDashboard, normalizeError } from "~/util/Fetch";
 
 interface LoginFormValues {
     Email: string;
@@ -71,22 +71,8 @@ export default function LoginPage(): JSX.Element {
 		await setIsLoggedIn(true);
 		setErrorMessage(resp.data);
 
-		// Handle redirecting the user after login
-		const searchParams = getSearchParams(history.location.search);
-		if (searchParams && searchParams.back_url) {
-			// Go to expected URL
-			//
-			// note(jae): 2021-08-19
-			// I've tested putting an outside URL in the "back_url" and the react-router-dom
-			// library seems to keep URL navigation local to the current website, so this
-			// can't be abused.
-			// - input:  http://localhost:9000/#/login?back_url=www.google.com/dashboard
-			// - output: http://localhost:9000/#/www.google.com/dashboard
-			history.push(searchParams.back_url);
-		} else {
-			// Go to dashboard if no back URL
-			history.push("/dashboard");
-		}
+		const redirectToURL = getBackURLOrDashboard();
+		history.push(redirectToURL);
 	}
 
 	return (
@@ -146,8 +132,17 @@ export default function LoginPage(): JSX.Element {
 						label="Login"
 						type="submit"
 						disabled={isFormSubmitting}
-						data-testid="loginButton"
 					/>
+					<div>
+						<Link to="register">
+							New? Register a new account by clicking here.
+						</Link>
+					</div>
+					<div>
+						<Link to="examplemodule">
+							Lets just go to the examplemodule page.
+						</Link>
+					</div>
 				</form>
 			}
 		</Container>
