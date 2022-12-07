@@ -68,7 +68,7 @@ func TestList(t *testing.T) {
 
 	// Check it returns what we expect in the HTTP body
 	got := strings.TrimSpace(rec.Body.String())
-	expected := `{"items":[{"title":"A Fake Todo Item Title","description":"Something I want to do"}]}`
+	expected := `{"items":[{"title":"A Fake Todo Item Title","description":"This data should come from the database instead! Not be mocked in the backend!"}]}`
 	if got != expected {
 		t.Errorf("returned unexpected body.\ngot: %v\nwant %v", got, expected)
 	}
