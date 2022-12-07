@@ -1,8 +1,10 @@
 package examplemodule
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/auth"
 	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
 )
 
@@ -21,15 +23,25 @@ func New(db *sqlw.DB) (*ExampleModule, error) {
 	m.db = db
 
 	// Setup routes
-	http.HandleFunc(modulePath+"/call", m.handleCall)
+	http.HandleFunc(modulePath+"/list", auth.AuthorizedHandler(m.handleList))
+	http.HandleFunc(modulePath+"/add", auth.AuthorizedHandler(m.handleAdd))
 
 	return m, nil
 }
 
-func (m *ExampleModule) handleCall(w http.ResponseWriter, r *http.Request) {
+type todoListResponse struct {
+	Items []todoListItemAPI `json:"items"`
+}
+
+type todoListItemAPI struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+func (m *ExampleModule) handleList(member *auth.Member, w http.ResponseWriter, r *http.Request) {
 	// Named query with SQLX library
 	// -----------------------------
-	/* stmt, err := m.db.PrepareNamedContext(r.Context(), `"SELECT * FROM "Table" WHERE "ID" = :MyIDParam`)
+	/* stmt, err := m.db.PrepareNamedContext(r.Context(), `"SELECT * FROM "TodoItem" WHERE "ID" = :MyIDParam`)
 	if err != nil {
 		log.Printf("error preparing select query: %s", err)
 		http.Error(w, "unexpected error", http.StatusInternalServerError)
@@ -43,5 +55,19 @@ func (m *ExampleModule) handleCall(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unexpected error", http.StatusInternalServerError)
 		return
 	} */
-	http.Error(w, "nothing has been implemented for this API yet", http.StatusInternalServerError)
+
+	// TODO: Make this get the members todo list items from the database
+	resp := todoListResponse{}
+	resp.Items = append(resp.Items, todoListItemAPI{
+		Title:       "A Fake Todo Item Title",
+		Description: "Something I want to do",
+	})
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if err := json.NewEncoder(w).Encode(&resp); err != nil {
+		http.Error(w, "unexpected error with encoding", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (m *ExampleModule) handleAdd(member *auth.Member, w http.ResponseWriter, r *http.Request) {
 }

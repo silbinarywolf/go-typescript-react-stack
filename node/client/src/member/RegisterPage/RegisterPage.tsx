@@ -116,7 +116,6 @@ function RegisterPageNotLoggedIn(): JSX.Element {
 					label="Register"
 					type="submit"
 					disabled={isFormSubmitting}
-					data-testid="registerButton"
 				/>
 			</form>
 		</Container>

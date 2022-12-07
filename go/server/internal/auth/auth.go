@@ -11,6 +11,7 @@ import (
 	"crypto/rand"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/silbinarywolf/go-typescript-react-stack/go/server/internal/sqlw"
 )
 
 // Member holds data that is exposed to authenticated requests
@@ -22,6 +23,19 @@ type Member struct {
 type claims struct {
 	Email string `json:"email"`
 	jwt.StandardClaims
+}
+
+type authModule struct {
+	db *sqlw.DB
+}
+
+var (
+	module authModule
+)
+
+func Init(db *sqlw.DB) error {
+	module.db = db
+	return nil
 }
 
 // For HMAC signing method, the key can be any []byte. It is recommended to generate
@@ -140,6 +154,7 @@ func AuthorizedHandler(endpoint func(*Member, http.ResponseWriter, *http.Request
 			http.Error(w, "unexpected error, JWT missing Email", http.StatusInternalServerError)
 			return
 		}
+		module.db.Begin()
 		member := &Member{
 			Email: claims.Email,
 		}

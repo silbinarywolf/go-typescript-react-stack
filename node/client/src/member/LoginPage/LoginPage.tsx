@@ -132,7 +132,6 @@ export default function LoginPage(): JSX.Element {
 						label="Login"
 						type="submit"
 						disabled={isFormSubmitting}
-						data-testid="loginButton"
 					/>
 					<div>
 						<Link to="register">

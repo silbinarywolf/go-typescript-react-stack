@@ -13,6 +13,7 @@ import axios from "axios";
 import { extractStatusCode } from "~/util/Fetch";
 import Error404Page from "~/core/Error404Page/Error404Page";
 import { AuthRoute } from "~/member/AuthRoute/AuthRoute";
+import ExampleModulePage from "~/examplemodule/ExampleModulePage/ExampleModulePage";
 
 const history = createHashHistory();
 
@@ -89,6 +90,11 @@ export default function App(): JSX.Element {
 							<AuthRoute
 								path={"/dashboard"}
 								component={DashboardPage}
+								exact
+							/>
+							<AuthRoute
+								path={"/examplemodule"}
+								component={ExampleModulePage}
 								exact
 							/>
 							<Route
